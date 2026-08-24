@@ -1,0 +1,49 @@
+package io.github.transactionbridge;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+public final class IsyBankNotificationParser implements NotificationParser {
+    private static final Pattern DIRECT_DEBIT = Pattern.compile(
+            "(?:E'|È) stato addebitato il pagamento di una domiciliazione di ([0-9][0-9.,]*) € da parte di (.+?) sul conto .+? in data (\\d{2}\\.\\d{2}\\.\\d{4})",
+            Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    private static final Pattern INSTANT_TRANSFER = Pattern.compile(
+            "(?:E'|È) stato inserito un bonifico istantaneo di ([0-9][0-9.,]*) € dal conto .+? in favore dell'IBAN (\\S+) in data (\\d{2}\\.\\d{2}\\.\\d{4}) alle ore (\\d{2}:\\d{2})",
+            Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd.MM.uuuu");
+    private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("dd.MM.uuuu HH:mm");
+
+    @Override public Transaction parse(long ignoredOccurredAt, String rawText) {
+        return parse(rawText);
+    }
+
+    public static Transaction parse(String rawText) {
+        String text = ParserSupport.normalize(rawText);
+        Matcher matcher = DIRECT_DEBIT.matcher(text);
+        boolean instantTransfer = false;
+        if (!matcher.find()) {
+            matcher = INSTANT_TRANSFER.matcher(text);
+            if (!matcher.find()) return null;
+            instantTransfer = true;
+        }
+        try {
+            BigDecimal amount = ParserSupport.amount(matcher.group(1));
+            if (amount.signum() <= 0) return null;
+            long occurredAt = instantTransfer
+                    ? LocalDateTime.parse(matcher.group(3) + " " + matcher.group(4), DATE_TIME)
+                            .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+                    : LocalDate.parse(matcher.group(3), DATE)
+                            .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+            String merchant = instantTransfer ? "Bonifico " + matcher.group(2) : matcher.group(2).trim();
+            return new Transaction(occurredAt, amount, "EUR", merchant, text, "isybank-notification");
+        } catch (NumberFormatException | DateTimeParseException invalidNotification) {
+            return null;
+        }
+    }
+}
