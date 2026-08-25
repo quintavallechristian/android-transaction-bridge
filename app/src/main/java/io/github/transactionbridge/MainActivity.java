@@ -3,6 +3,7 @@ package io.github.transactionbridge;
 import android.app.Activity;
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
@@ -36,6 +37,9 @@ public final class MainActivity extends Activity {
     private static final int MUTED = Color.rgb(71, 85, 105);
     private static final int SURFACE = Color.rgb(248, 250, 252);
     private static final int OUTLINE = Color.rgb(203, 213, 225);
+    private static final ColorStateList CONTROL_TINT = new ColorStateList(
+            new int[][]{new int[]{android.R.attr.state_checked}, new int[]{}},
+            new int[]{BLUE, MUTED});
     private LinearLayout content;
     private boolean settingsVisible;
 
@@ -132,12 +136,14 @@ public final class MainActivity extends Activity {
         content.addView(text("Only enabled apps are inspected for supported payment notifications.", MUTED, 14), margin(0, 0, 0, 10));
         Map<String, CheckBox> checks = new LinkedHashMap<>();
         Map<String, String> walletCards = new LinkedHashMap<>(Settings.walletCards(this));
-        for (ParserRegistry.Provider provider : ParserRegistry.defaultRegistry(walletCards).providers()) {
+        ParserRegistry registry = ParserRegistry.defaultRegistry(walletCards);
+        for (ParserRegistry.Provider provider : registry.providers()) {
             addSource(checks, provider.label, provider.settingKey);
         }
 
-        content.addView(sectionTitle("Google Wallet cards"), margin(0, 28, 0, 6));
-        content.addView(text("Wallet reveals only the last four digits. Give each card a local name; unknown cards are ignored.", MUTED, 14), margin(0, 0, 0, 16));
+        LinearLayout walletSection = column();
+        walletSection.addView(sectionTitle("Google Wallet cards"), margin(0, 28, 0, 6));
+        walletSection.addView(text("Wallet reveals only the last four digits. Give each card a local name; unknown cards are ignored.", MUTED, 14), margin(0, 0, 0, 16));
 
         LinearLayout walletForm = panel();
         walletForm.addView(label("Last 4 digits"), margin(0, 0, 0, 6));
@@ -160,7 +166,12 @@ public final class MainActivity extends Activity {
         }), margin(0, 0, 0, 12));
         walletForm.addView(configuredCards, margin(0, 0, 0, 0));
         renderWalletCards(configuredCards, walletCards);
-        content.addView(walletForm, margin(0, 0, 0, 24));
+        walletSection.addView(walletForm, margin(0, 0, 0, 24));
+        content.addView(walletSection);
+        CheckBox walletCheck = checks.get(registry.providerFor(ParserRegistry.GOOGLE_WALLET_PACKAGE).settingKey);
+        walletSection.setVisibility(walletCheck.isChecked() ? View.VISIBLE : View.GONE);
+        walletCheck.setOnCheckedChangeListener((button, checked) ->
+                walletSection.setVisibility(checked ? View.VISIBLE : View.GONE));
 
         LinearLayout actions = actionBar();
         actions.addView(primaryButton("Save changes", v -> {
@@ -236,6 +247,7 @@ public final class MainActivity extends Activity {
         check.setTextColor(INK);
         check.setTextSize(16);
         check.setChecked(Settings.sourceEnabled(this, source));
+        check.setButtonTintList(CONTROL_TINT);
         check.setMinHeight(dp(48));
         checks.put(source, check);
         content.addView(check, margin(0, 0, 0, 0));
@@ -306,7 +318,9 @@ public final class MainActivity extends Activity {
         value.setText(label);
         value.setTextColor(INK);
         value.setTextSize(16);
+        value.setId(View.generateViewId());
         value.setChecked(checked);
+        value.setButtonTintList(CONTROL_TINT);
         value.setMinHeight(dp(48));
         return value;
     }
