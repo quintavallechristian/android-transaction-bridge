@@ -33,4 +33,4 @@ The default payload contains `version`, `id`, `source`, `occurredAt`, `amount`, 
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), and [PRIVACY.md](PRIVACY.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md), [Adding a notification provider](docs/ADDING_A_PROVIDER.md), [SECURITY.md](SECURITY.md), and [PRIVACY.md](PRIVACY.md).
