@@ -6,6 +6,8 @@ import android.content.SharedPreferences;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /** FIFO durable queue. A record is removed only after a 2xx response. */
 public final class PersistentDeliveryQueue {
@@ -77,6 +79,12 @@ public final class PersistentDeliveryQueue {
     }
 
     public synchronized int size() { return read().size(); }
+
+    public synchronized Set<String> ids() {
+        Set<String> ids = new LinkedHashSet<>();
+        for (DeliveryRecord item : read()) ids.add(item.id);
+        return ids;
+    }
 
     private List<DeliveryRecord> read() {
         String value = store.read();

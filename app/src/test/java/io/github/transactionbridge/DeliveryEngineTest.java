@@ -13,6 +13,7 @@ public final class DeliveryEngineTest {
         assertTrue(first.enqueue("b", "{\"id\":\"b\"}"));
 
         PersistentDeliveryQueue reopened = new PersistentDeliveryQueue(store);
+        assertEquals(java.util.Set.of("a", "b"), reopened.ids());
         assertEquals("a", reopened.peek().id);
         assertEquals("{\"id\":\"a\"}", reopened.removeFirst().payload);
         assertEquals("b", reopened.peek().id);

@@ -25,6 +25,8 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.text.DateFormat;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -37,6 +39,9 @@ public final class MainActivity extends Activity {
     private static final int MUTED = Color.rgb(71, 85, 105);
     private static final int SURFACE = Color.rgb(248, 250, 252);
     private static final int OUTLINE = Color.rgb(203, 213, 225);
+    private static final int SUCCESS = Color.rgb(21, 128, 61);
+    private static final int WARNING = Color.rgb(161, 98, 7);
+    private static final int ERROR = Color.rgb(185, 28, 28);
     private static final ColorStateList CONTROL_TINT = new ColorStateList(
             new int[][]{new int[]{android.R.attr.state_checked}, new int[]{}},
             new int[]{BLUE, MUTED});
@@ -97,6 +102,31 @@ public final class MainActivity extends Activity {
                     attention.deleteFirst();
                     showHome();
                 }), margin(0, 0, 0, 0));
+            }
+
+            content.addView(sectionTitle("Recent notifications"), margin(0, 28, 0, 6));
+            content.addView(text("The latest supported payments recognized on this device. Notification text is not stored here.",
+                    MUTED, 14), margin(0, 0, 0, 14));
+            Set<String> pendingIds = queue.ids();
+            Set<String> attentionIds = new LinkedHashSet<>();
+            for (AttentionLog.Entry entry : attention.entries()) attentionIds.add(entry.id);
+            java.util.List<RecentTransactionLog.Entry> recent =
+                    new RecentTransactionLog(RecentTransactionLog.preferences(this)).entries();
+            if (recent.isEmpty()) {
+                content.addView(text("No supported notifications recognized yet.", MUTED, 14), margin(0, 0, 0, 0));
+            } else {
+                for (RecentTransactionLog.Entry entry : recent) {
+                    String status = "Delivered";
+                    int statusColor = SUCCESS;
+                    if (attentionIds.contains(entry.id)) {
+                        status = "Needs attention";
+                        statusColor = ERROR;
+                    } else if (pendingIds.contains(entry.id)) {
+                        status = "Queued";
+                        statusColor = WARNING;
+                    }
+                    content.addView(recentItem(entry, status, statusColor), margin(0, 0, 0, 10));
+                }
             }
         }
 
@@ -383,6 +413,27 @@ public final class MainActivity extends Activity {
         value.setTypeface(Typeface.MONOSPACE, Typeface.BOLD);
         row.addView(value);
         return row;
+    }
+
+    private LinearLayout recentItem(RecentTransactionLog.Entry entry, String status, int statusColor) {
+        LinearLayout item = panel();
+        LinearLayout summary = new LinearLayout(this);
+        summary.setOrientation(LinearLayout.HORIZONTAL);
+        summary.setGravity(Gravity.TOP);
+        TextView merchant = text(entry.merchant, INK, 16);
+        merchant.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        summary.addView(merchant, new LinearLayout.LayoutParams(0, -2, 1));
+        TextView amount = text(entry.amount + " " + entry.currency, INK, 16);
+        amount.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        summary.addView(amount, new LinearLayout.LayoutParams(-2, -2));
+        item.addView(summary, margin(0, 0, 0, 6));
+        String occurredAt = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
+                .format(new Date(entry.occurredAt));
+        item.addView(text(entry.provider + " · " + occurredAt, MUTED, 13), margin(0, 0, 0, 8));
+        TextView state = text(status, statusColor, 13);
+        state.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        item.addView(state, margin(0, 0, 0, 0));
+        return item;
     }
 
     private GradientDrawable shape(int fill, int stroke, int radius) {

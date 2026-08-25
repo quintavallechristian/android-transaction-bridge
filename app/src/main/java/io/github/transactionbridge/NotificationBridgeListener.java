@@ -75,6 +75,11 @@ public final class NotificationBridgeListener extends NotificationListenerServic
             PersistentDeliveryQueue queue = new PersistentDeliveryQueue(
                     PersistentDeliveryQueue.preferences(this, "delivery_queue"));
             if (queue.enqueue(transaction.id, payload)) {
+                try {
+                    new RecentTransactionLog(RecentTransactionLog.preferences(this)).record(transaction, provider.label);
+                } catch (RuntimeException ignored) {
+                    // Observability must never block webhook delivery.
+                }
                 DeliveryRunner.start(this);
             }
         } catch (RuntimeException ignored) {
