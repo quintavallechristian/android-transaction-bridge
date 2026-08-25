@@ -1,9 +1,9 @@
 package io.github.transactionbridge;
 
-import java.util.Collections;
+import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /** Fixed package-to-parser mapping for the sources shipped by the bridge. */
 public final class ParserRegistry {
@@ -13,43 +13,46 @@ public final class ParserRegistry {
     public static final String GOOGLE_WALLET_PACKAGE = "com.google.android.apps.walletnfcrel";
     public static final String REVOLUT_PACKAGE = "com.revolut.revolut";
 
-    private final Map<String, NotificationParser> parsers = new LinkedHashMap<>();
+    public static final class Provider {
+        public final String packageName;
+        public final String settingKey;
+        public final String label;
+        final NotificationParser parser;
+
+        Provider(String packageName, String settingKey, String label, NotificationParser parser) {
+            this.packageName = packageName;
+            this.settingKey = settingKey;
+            this.label = label;
+            this.parser = parser;
+        }
+    }
+
+    private final Map<String, Provider> providers = new LinkedHashMap<>();
 
     public ParserRegistry() {}
 
     public static ParserRegistry defaultRegistry(Map<String, String> walletCards) {
         ParserRegistry registry = new ParserRegistry();
-        registry.register(CRYPTO_COM_PACKAGE, new CryptoComNotificationParser());
-        registry.register(ISYBANK_PACKAGE, new IsyBankNotificationParser());
-        registry.register(ING_PACKAGE, new IngNotificationParser());
-        registry.register(GOOGLE_WALLET_PACKAGE, new GoogleWalletNotificationParser(walletCards));
-        registry.register(REVOLUT_PACKAGE, new RevolutNotificationParser());
+        registry.register(CRYPTO_COM_PACKAGE, "crypto.com", "Crypto.com", new CryptoComNotificationParser());
+        registry.register(ISYBANK_PACKAGE, "isybank", "IsyBank", new IsyBankNotificationParser());
+        registry.register(ING_PACKAGE, "ing", "ING", new IngNotificationParser());
+        registry.register(GOOGLE_WALLET_PACKAGE, "google_wallet", "Google Wallet", new GoogleWalletNotificationParser(walletCards));
+        registry.register(REVOLUT_PACKAGE, "revolut", "Revolut", new RevolutNotificationParser());
         return registry;
     }
 
-    public static ParserRegistry defaults(Map<String, String> walletCards) {
-        return defaultRegistry(walletCards);
-    }
-
-    public ParserRegistry register(String packageName, NotificationParser parser) {
+    public ParserRegistry register(String packageName, String settingKey, String label, NotificationParser parser) {
         if (packageName == null || packageName.trim().isEmpty()) throw new IllegalArgumentException("packageName is required");
-        if (parser == null) throw new IllegalArgumentException("parser is required");
-        parsers.put(packageName, parser);
+        if (settingKey == null || settingKey.trim().isEmpty() || label == null || label.trim().isEmpty() || parser == null) {
+            throw new IllegalArgumentException("settingKey, label and parser are required");
+        }
+        providers.put(packageName, new Provider(packageName, settingKey, label, parser));
         return this;
     }
 
-    public NotificationParser parserFor(String packageName) {
-        return parsers.get(packageName);
-    }
+    public Provider providerFor(String packageName) { return providers.get(packageName); }
 
-    public Transaction parse(String packageName, long occurredAt, String rawText) {
-        NotificationParser parser = parserFor(packageName);
-        return parser == null ? null : parser.parse(occurredAt, rawText);
-    }
-
-    public boolean supports(String packageName) { return parsers.containsKey(packageName); }
-
-    public Set<String> supportedPackages() {
-        return Collections.unmodifiableSet(parsers.keySet());
+    public Collection<Provider> providers() {
+        return List.copyOf(providers.values());
     }
 }

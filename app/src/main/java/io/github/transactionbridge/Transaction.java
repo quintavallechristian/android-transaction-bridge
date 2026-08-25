@@ -6,12 +6,9 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Locale;
-import java.util.Objects;
 
 /** A validated, immutable transaction produced by a notification parser. */
 public final class Transaction {
-    public static final int VERSION = 1;
-
     public final String id;
     public final long occurredAt;
     public final BigDecimal amount;
@@ -42,20 +39,6 @@ public final class Transaction {
     public String occurredAtIso() {
         return Instant.ofEpochMilli(occurredAt).toString();
     }
-
-    public String getId() { return id; }
-    public long getOccurredAt() { return occurredAt; }
-    public BigDecimal getAmount() { return amount; }
-    public String getCurrency() { return currency; }
-    public String getMerchant() { return merchant; }
-    public String getRawText() { return rawText; }
-    public String getSource() { return source; }
-
-    @Override public boolean equals(Object other) {
-        return other instanceof Transaction && id.equals(((Transaction) other).id);
-    }
-
-    @Override public int hashCode() { return Objects.hash(id); }
 
     private static String sha256(String value) {
         try {

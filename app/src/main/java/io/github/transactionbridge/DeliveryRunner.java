@@ -11,7 +11,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /** Bridges listener callbacks to one durable, FIFO delivery worker. */
-public final class DeliveryRunner implements NotificationBridgeListener.Handler {
+public final class DeliveryRunner {
     private static final String QUEUE_FILE = "delivery_queue";
     private static final String ATTENTION_FILE = "delivery_attention";
     private static final String STATE_FILE = "delivery_state";
@@ -25,14 +25,9 @@ public final class DeliveryRunner implements NotificationBridgeListener.Handler 
 
     private DeliveryRunner() {}
 
-    public static void install(Context context) {
-        NotificationBridgeListener.setHandler(INSTANCE);
+    public static void start(Context context) {
         INSTANCE.request(context);
     }
-
-    @Override public void onQueued(Context context, Transaction transaction, String payload) { request(context); }
-
-    @Override public void onNetworkAvailable(Context context) { request(context); }
 
     private void request(Context context) {
         if (context == null) return;
@@ -54,7 +49,7 @@ public final class DeliveryRunner implements NotificationBridgeListener.Handler 
         try {
             PersistentDeliveryQueue queue = new PersistentDeliveryQueue(PersistentDeliveryQueue.preferences(context, QUEUE_FILE));
             AttentionLog attention = new AttentionLog(AttentionLog.preferences(context, ATTENTION_FILE));
-            WebhookUploader uploader = new WebhookUploader(queue, new WebhookClient(), attention);
+            WebhookUploader uploader = new WebhookUploader(queue, new WebhookClient(), attention::record);
             while (true) {
                 DeliveryRecord head = queue.peek();
                 if (head == null) return;

@@ -1,60 +1,42 @@
 package io.github.transactionbridge;
 
 import android.app.Notification;
-import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.os.Bundle;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 
-import org.json.JSONException;
-
 import java.util.LinkedHashSet;
 import java.util.Set;
 
 /** Android-only adapter: extracts notification text, then hands pure data to the bridge core. */
 public final class NotificationBridgeListener extends NotificationListenerService {
-    public interface Handler {
-        void onQueued(Context context, Transaction transaction, String payload);
-        void onNetworkAvailable(Context context);
-    }
-
-    private static volatile Handler handler;
-    private static volatile NotificationBridgeListener connected;
+    private static volatile NotificationBridgeListener instance;
     private ConnectivityManager connectivity;
     private ParserRegistry registry;
 
-    public static void setHandler(Handler value) {
-        handler = value;
-    }
-
     public static void refreshConfiguration() {
-        NotificationBridgeListener value = connected;
+        NotificationBridgeListener value = instance;
         if (value != null) value.registry = ParserRegistry.defaultRegistry(Settings.walletCards(value));
     }
 
     @Override public void onCreate() {
         super.onCreate();
-        DeliveryRunner.install(this);
+        instance = this;
+        DeliveryRunner.start(this);
         registry = ParserRegistry.defaultRegistry(Settings.walletCards(this));
         connectivity = getSystemService(ConnectivityManager.class);
         if (connectivity != null) connectivity.registerDefaultNetworkCallback(networkCallback);
     }
 
     @Override public void onListenerConnected() {
-        connected = this;
         registry = ParserRegistry.defaultRegistry(Settings.walletCards(this));
-        Handler value = handler;
-        if (value != null) value.onNetworkAvailable(this);
-    }
-
-    @Override public void onListenerDisconnected() {
-        if (connected == this) connected = null;
+        DeliveryRunner.start(this);
     }
 
     @Override public void onDestroy() {
-        if (connected == this) connected = null;
+        if (instance == this) instance = null;
         if (connectivity != null) connectivity.unregisterNetworkCallback(networkCallback);
         super.onDestroy();
     }
@@ -62,8 +44,8 @@ public final class NotificationBridgeListener extends NotificationListenerServic
     @Override public void onNotificationPosted(StatusBarNotification notification) {
         if (notification == null || registry == null) return;
         String packageName = notification.getPackageName();
-        String source = sourceForPackage(packageName);
-        if (source == null || !Settings.sourceEnabled(this, source)) return;
+        ParserRegistry.Provider provider = registry.providerFor(packageName);
+        if (provider == null || !Settings.sourceEnabled(this, provider.settingKey)) return;
 
         Bundle extras = notification.getNotification().extras;
         Set<String> parts = new LinkedHashSet<>();
@@ -74,12 +56,11 @@ public final class NotificationBridgeListener extends NotificationListenerServic
 
         String rawText = String.join(" ", parts);
         Transaction transaction = null;
-        NotificationParser parser = registry.parserFor(packageName);
         for (String part : parts) {
-            transaction = parser.parse(notification.getPostTime(), part);
+            transaction = provider.parser.parse(notification.getPostTime(), part);
             if (transaction != null) break;
         }
-        if (transaction == null) transaction = parser.parse(notification.getPostTime(), rawText);
+        if (transaction == null) transaction = provider.parser.parse(notification.getPostTime(), rawText);
         if (transaction == null) return;
 
         // Keep the complete notification only for the opt-in full payload mode.
@@ -90,48 +71,22 @@ public final class NotificationBridgeListener extends NotificationListenerServic
         try {
             PayloadMode mode = Settings.PAYLOAD_FULL.equals(Settings.payloadMode(this))
                     ? PayloadMode.FULL : PayloadMode.MINIMAL;
-            String payload = WebhookPayload.from(transaction, mode).toString();
+            String payload = WebhookPayload.from(transaction, mode);
             PersistentDeliveryQueue queue = new PersistentDeliveryQueue(
                     PersistentDeliveryQueue.preferences(this, "delivery_queue"));
             if (queue.enqueue(transaction.id, payload)) {
-                Handler value = handler;
-                if (value != null) value.onQueued(this, transaction, payload);
+                DeliveryRunner.start(this);
             }
-        } catch (JSONException | RuntimeException ignored) {
+        } catch (RuntimeException ignored) {
             // Invalid parser output is ignored; it must not poison the durable queue.
         }
     }
 
-    public static int replayActiveNotifications() {
-        NotificationBridgeListener value = connected;
-        if (value == null) return -1;
-        StatusBarNotification[] notifications = value.getActiveNotifications();
-        if (notifications == null) return 0;
-        int replayed = 0;
-        for (StatusBarNotification notification : notifications) {
-            if (value.registry != null && value.registry.supports(notification.getPackageName())) {
-                value.onNotificationPosted(notification);
-                replayed++;
-            }
-        }
-        return replayed;
-    }
-
     private final ConnectivityManager.NetworkCallback networkCallback = new ConnectivityManager.NetworkCallback() {
         @Override public void onAvailable(Network network) {
-            Handler value = handler;
-            if (value != null) value.onNetworkAvailable(NotificationBridgeListener.this);
+            DeliveryRunner.start(NotificationBridgeListener.this);
         }
     };
-
-    private static String sourceForPackage(String packageName) {
-        if (ParserRegistry.ING_PACKAGE.equals(packageName)) return Settings.SOURCE_ING;
-        if (ParserRegistry.ISYBANK_PACKAGE.equals(packageName)) return Settings.SOURCE_ISYBANK;
-        if (ParserRegistry.REVOLUT_PACKAGE.equals(packageName)) return Settings.SOURCE_REVOLUT;
-        if (ParserRegistry.CRYPTO_COM_PACKAGE.equals(packageName)) return Settings.SOURCE_CRYPTO_COM;
-        if (ParserRegistry.GOOGLE_WALLET_PACKAGE.equals(packageName)) return Settings.SOURCE_GOOGLE_WALLET;
-        return null;
-    }
 
     private static void add(Set<String> parts, CharSequence value) {
         if (value != null && !value.toString().trim().isEmpty()) parts.add(value.toString().trim());

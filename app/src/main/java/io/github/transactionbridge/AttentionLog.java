@@ -10,7 +10,7 @@ import java.util.Collections;
 import java.util.List;
 
 /** Durable local register for non-retryable webhook responses. */
-public final class AttentionLog implements WebhookUploader.AttentionLog {
+public final class AttentionLog {
     public interface Store {
         String read();
         void write(String value);
@@ -45,7 +45,7 @@ public final class AttentionLog implements WebhookUploader.AttentionLog {
         this.store = store;
     }
 
-    @Override public synchronized void record(DeliveryRecord item, String reason) {
+    public synchronized void record(DeliveryRecord item, String reason) {
         if (item == null) throw new IllegalArgumentException("item is required");
         List<Entry> entries = read();
         entries.removeIf(existing -> existing.id.equals(item.id));

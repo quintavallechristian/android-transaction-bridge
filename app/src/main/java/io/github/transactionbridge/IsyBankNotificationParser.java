@@ -20,10 +20,6 @@ public final class IsyBankNotificationParser implements NotificationParser {
     private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("dd.MM.uuuu HH:mm");
 
     @Override public Transaction parse(long ignoredOccurredAt, String rawText) {
-        return parse(rawText);
-    }
-
-    public static Transaction parse(String rawText) {
         String text = ParserSupport.normalize(rawText);
         Matcher matcher = DIRECT_DEBIT.matcher(text);
         boolean instantTransfer = false;

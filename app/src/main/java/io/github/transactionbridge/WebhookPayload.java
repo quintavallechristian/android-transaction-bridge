@@ -1,15 +1,12 @@
 package io.github.transactionbridge;
 
-import org.json.JSONException;
-import org.json.JSONObject;
-
 /** Builds the versioned wire object without leaking queue metadata. */
 public final class WebhookPayload {
     private WebhookPayload() {}
 
-    public static JSONObject from(Transaction transaction, PayloadMode mode) throws JSONException {
+    public static String from(Transaction transaction, PayloadMode mode) {
         if (transaction == null) throw new IllegalArgumentException("transaction is required");
-        return create(transaction.id, transaction.source, transaction.occurredAtIso(),
+        return createJson(transaction.id, transaction.source, transaction.occurredAtIso(),
                 transaction.amount.toPlainString(), transaction.currency, transaction.merchant,
                 transaction.rawText, mode);
     }
@@ -34,28 +31,6 @@ public final class WebhookPayload {
                 .append(",\"merchant\":").append(quoted(required(merchant, "merchant")));
         if (mode == PayloadMode.FULL) json.append(",\"rawText\":").append(quoted(rawText == null ? "" : rawText));
         return json.append('}').toString();
-    }
-
-    public static JSONObject create(
-            String id,
-            String source,
-            String occurredAt,
-            String amount,
-            String currency,
-            String merchant,
-            String rawText,
-            PayloadMode mode) throws JSONException {
-        if (mode == null) throw new IllegalArgumentException("payload mode is required");
-        JSONObject payload = new JSONObject()
-                .put("version", 1)
-                .put("id", required(id, "id"))
-                .put("source", required(source, "source"))
-                .put("occurredAt", required(occurredAt, "occurredAt"))
-                .put("amount", required(amount, "amount"))
-                .put("currency", required(currency, "currency"))
-                .put("merchant", required(merchant, "merchant"));
-        if (mode == PayloadMode.FULL) payload.put("rawText", rawText == null ? "" : rawText);
-        return payload;
     }
 
     private static String required(String value, String name) {

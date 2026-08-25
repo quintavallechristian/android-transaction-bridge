@@ -24,8 +24,4 @@ public final class RevolutNotificationParser implements NotificationParser {
             return null;
         }
     }
-
-    public static Transaction parsePayment(long occurredAt, String rawText) {
-        return new RevolutNotificationParser().parse(occurredAt, rawText);
-    }
 }

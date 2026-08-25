@@ -5,7 +5,6 @@ import android.content.SharedPreferences;
 
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.List;
 
 /** FIFO durable queue. A record is removed only after a 2xx response. */
@@ -78,10 +77,6 @@ public final class PersistentDeliveryQueue {
     }
 
     public synchronized int size() { return read().size(); }
-
-    public synchronized List<DeliveryRecord> snapshot() {
-        return Collections.unmodifiableList(new ArrayList<>(read()));
-    }
 
     private List<DeliveryRecord> read() {
         String value = store.read();

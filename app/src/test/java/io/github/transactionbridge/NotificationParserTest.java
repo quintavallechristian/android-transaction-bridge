@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -34,13 +33,13 @@ public final class NotificationParserTest {
     }
 
     @Test public void parsesIsyBankDateAndMaskedTransferWithoutOwnerNames() {
-        Transaction debit = IsyBankNotificationParser.parse(
+        Transaction debit = new IsyBankNotificationParser().parse(TIME,
                 "E' stato addebitato il pagamento di una domiciliazione di 28,89 € da parte di EXAMPLE PROVIDER "
                         + "sul conto xxx421 in data 10.08.2026");
         assertEquals("28.89", debit.amount.toPlainString());
         assertEquals("EXAMPLE PROVIDER", debit.merchant);
 
-        Transaction transfer = IsyBankNotificationParser.parse(
+        Transaction transfer = new IsyBankNotificationParser().parse(TIME,
                 "È stato inserito un bonifico istantaneo di 30,00 € dal conto xxx421 in favore dell'IBAN DE*** "
                         + "in data 13.08.2026 alle ore 17:14.");
         assertEquals("Bonifico DE***", transfer.merchant);
@@ -66,11 +65,12 @@ public final class NotificationParserTest {
         Map<String, String> cards = new HashMap<>();
         cards.put("1501", "Example Card");
         ParserRegistry registry = ParserRegistry.defaultRegistry(cards);
-        assertTrue(registry.supports(ParserRegistry.ING_PACKAGE));
-        assertFalse(registry.supports("com.example.other"));
-        assertEquals("ing-notification", registry.parse(ParserRegistry.ING_PACKAGE, TIME,
+        ParserRegistry.Provider ing = registry.providerFor(ParserRegistry.ING_PACKAGE);
+        assertEquals("ING", ing.label);
+        assertEquals("ing", ing.settingKey);
+        assertEquals("ing-notification", ing.parser.parse(TIME,
                 "Operazione autorizzata: 1,25 euro, Example Market.").source);
-        assertNull(registry.parse("com.example.other", TIME, "Example Market 1,25 EUR"));
+        assertNull(registry.providerFor("com.example.other"));
     }
 
     @Test public void walletCardsUseSeparateValidatedDigitsAndNames() {
@@ -80,7 +80,7 @@ public final class NotificationParserTest {
         Settings.putWalletCard(cards, "1501", "Business card");
         assertEquals("Business card", cards.get("1501"));
         assertEquals(cards, Settings.parseWalletCards(Settings.walletCardsText(cards)));
-        Settings.removeWalletCard(cards, "1501");
+        cards.remove("1501");
         assertTrue(cards.isEmpty());
 
         try {

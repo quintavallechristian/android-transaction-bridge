@@ -25,7 +25,8 @@ public final class DeliveryEngineTest {
         queue.enqueue("b", "{}");
         assertEquals(7_200_000L, queue.deferFirst(10_000L, "999999"));
         assertFalse(queue.ready(10_000L));
-        assertEquals("b", queue.snapshot().get(1).id);
+        queue.removeFirst();
+        assertEquals("b", queue.peek().id);
         assertEquals(RetryPolicy.Action.SUSPEND, RetryPolicy.classify(403));
         assertEquals(RetryPolicy.Action.ATTENTION, RetryPolicy.classify(422));
         assertEquals(RetryPolicy.Action.RETRY, RetryPolicy.classify(503));

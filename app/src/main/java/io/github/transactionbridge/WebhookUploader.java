@@ -1,18 +1,15 @@
 package io.github.transactionbridge;
 
 import java.io.IOException;
+import java.util.function.BiConsumer;
 
 /** Processes only the FIFO head; callers can schedule another pass after the result. */
 public final class WebhookUploader {
-    public interface AttentionLog {
-        void record(DeliveryRecord item, String reason);
-    }
-
     private final PersistentDeliveryQueue queue;
     private final WebhookClient client;
-    private final AttentionLog attentionLog;
+    private final BiConsumer<DeliveryRecord, String> attentionLog;
 
-    public WebhookUploader(PersistentDeliveryQueue queue, WebhookClient client, AttentionLog attentionLog) {
+    public WebhookUploader(PersistentDeliveryQueue queue, WebhookClient client, BiConsumer<DeliveryRecord, String> attentionLog) {
         if (queue == null || client == null) throw new IllegalArgumentException("queue and client are required");
         this.queue = queue;
         this.client = client;
@@ -21,28 +18,28 @@ public final class WebhookUploader {
 
     public DeliveryOutcome deliverNext(String endpoint, String bearerToken, long nowMillis) {
         DeliveryRecord item = queue.peek();
-        if (item == null) return DeliveryOutcome.of(DeliveryOutcome.State.EMPTY, 0, "queue is empty");
-        if (!queue.ready(nowMillis)) return DeliveryOutcome.of(DeliveryOutcome.State.RETRY_SCHEDULED, item.nextAttemptAt - nowMillis, "not ready");
+        if (item == null) return DeliveryOutcome.of(DeliveryOutcome.State.EMPTY, 0);
+        if (!queue.ready(nowMillis)) return DeliveryOutcome.of(DeliveryOutcome.State.RETRY_SCHEDULED, item.nextAttemptAt - nowMillis);
         try {
             WebhookClient.Response response = client.post(endpoint, item.payload, bearerToken);
             RetryPolicy.Action action = RetryPolicy.classify(response.statusCode);
             if (action == RetryPolicy.Action.SUCCESS) {
                 queue.removeFirst();
-                return DeliveryOutcome.of(DeliveryOutcome.State.DELIVERED, 0, "ok");
+                return DeliveryOutcome.of(DeliveryOutcome.State.DELIVERED, 0);
             }
             if (action == RetryPolicy.Action.SUSPEND) {
-                return DeliveryOutcome.of(DeliveryOutcome.State.SUSPENDED, 0, "HTTP " + response.statusCode);
+                return DeliveryOutcome.of(DeliveryOutcome.State.SUSPENDED, 0);
             }
             if (action == RetryPolicy.Action.ATTENTION) {
                 DeliveryRecord removed = queue.removeFirst();
-                if (attentionLog != null) attentionLog.record(removed, "HTTP " + response.statusCode);
-                return DeliveryOutcome.of(DeliveryOutcome.State.NEEDS_ATTENTION, 0, "HTTP " + response.statusCode);
+                if (attentionLog != null) attentionLog.accept(removed, "HTTP " + response.statusCode);
+                return DeliveryOutcome.of(DeliveryOutcome.State.NEEDS_ATTENTION, 0);
             }
             long delay = queue.deferFirst(nowMillis, response.retryAfter);
-            return DeliveryOutcome.of(DeliveryOutcome.State.RETRY_SCHEDULED, delay, "HTTP " + response.statusCode);
+            return DeliveryOutcome.of(DeliveryOutcome.State.RETRY_SCHEDULED, delay);
         } catch (IOException | RuntimeException error) {
             long delay = queue.deferFirst(nowMillis, null);
-            return DeliveryOutcome.of(DeliveryOutcome.State.RETRY_SCHEDULED, delay, error.getMessage() == null ? "temporary delivery failure" : error.getMessage());
+            return DeliveryOutcome.of(DeliveryOutcome.State.RETRY_SCHEDULED, delay);
         }
     }
 }

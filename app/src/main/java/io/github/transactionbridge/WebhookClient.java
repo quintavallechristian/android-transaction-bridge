@@ -1,8 +1,6 @@
 package io.github.transactionbridge;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -17,12 +15,10 @@ public final class WebhookClient {
     public static final class Response {
         public final int statusCode;
         public final String retryAfter;
-        public final String body;
 
-        Response(int statusCode, String retryAfter, String body) {
+        Response(int statusCode, String retryAfter) {
             this.statusCode = statusCode;
             this.retryAfter = retryAfter;
-            this.body = body;
         }
     }
 
@@ -63,21 +59,9 @@ public final class WebhookClient {
             byte[] bytes = payload.getBytes(StandardCharsets.UTF_8);
             connection.setFixedLengthStreamingMode(bytes.length);
             try (OutputStream output = connection.getOutputStream()) { output.write(bytes); }
-            int status = connection.getResponseCode();
-            InputStream stream = status >= 400 ? connection.getErrorStream() : connection.getInputStream();
-            return new Response(status, connection.getHeaderField("Retry-After"), read(stream));
+            return new Response(connection.getResponseCode(), connection.getHeaderField("Retry-After"));
         } finally {
             connection.disconnect();
-        }
-    }
-
-    private static String read(InputStream input) throws IOException {
-        if (input == null) return "";
-        try (InputStream stream = input; ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-            byte[] buffer = new byte[2048];
-            int count;
-            while ((count = stream.read(buffer)) != -1) output.write(buffer, 0, count);
-            return output.toString(StandardCharsets.UTF_8.name());
         }
     }
 }

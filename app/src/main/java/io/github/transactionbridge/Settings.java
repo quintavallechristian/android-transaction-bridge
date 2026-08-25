@@ -9,7 +9,6 @@ import android.util.Base64;
 
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -23,11 +22,6 @@ import javax.crypto.spec.GCMParameterSpec;
 
 /** Small, local-only settings store. Secrets never go into SharedPreferences in plaintext. */
 public final class Settings {
-    public static final String SOURCE_ING = "ing";
-    public static final String SOURCE_ISYBANK = "isybank";
-    public static final String SOURCE_REVOLUT = "revolut";
-    public static final String SOURCE_CRYPTO_COM = "crypto.com";
-    public static final String SOURCE_GOOGLE_WALLET = "google_wallet";
     public static final String PAYLOAD_MINIMAL = "minimal";
     public static final String PAYLOAD_FULL = "full";
 
@@ -40,9 +34,6 @@ public final class Settings {
     private static final String KEYSTORE = "AndroidKeyStore";
     private static final String KEY_ALIAS = "transaction_bridge_token";
     private static final String TOKEN_SEPARATOR = ":";
-    private static final Set<String> DEFAULT_SOURCES = Collections.unmodifiableSet(new LinkedHashSet<>(Arrays.asList(
-            SOURCE_ING, SOURCE_ISYBANK, SOURCE_REVOLUT, SOURCE_CRYPTO_COM,
-            SOURCE_GOOGLE_WALLET)));
 
     private Settings() {}
 
@@ -67,13 +58,15 @@ public final class Settings {
         editor.apply();
     }
 
-    public static void clear(Context context) {
-        preferences(context).edit().clear().apply();
-    }
-
     public static Set<String> enabledSources(Context context) {
         String encoded = preferences(context).getString(KEY_SOURCES, "");
-        if (encoded.isEmpty()) return new LinkedHashSet<>(DEFAULT_SOURCES);
+        if (encoded.isEmpty()) {
+            Set<String> defaults = new LinkedHashSet<>();
+            for (ParserRegistry.Provider provider : ParserRegistry.defaultRegistry(Collections.emptyMap()).providers()) {
+                defaults.add(provider.settingKey);
+            }
+            return defaults;
+        }
         Set<String> result = new LinkedHashSet<>();
         for (String source : encoded.split(",")) {
             if (!source.trim().isEmpty()) result.add(source.trim());
@@ -123,10 +116,6 @@ public final class Settings {
         if (!digits.matches("\\d{4}")) throw new IllegalArgumentException("Enter exactly the last 4 card digits");
         if (label.isEmpty()) throw new IllegalArgumentException("Enter a card name");
         cards.put(digits, label);
-    }
-
-    public static void removeWalletCard(Map<String, String> cards, String lastFour) {
-        if (cards != null) cards.remove(lastFour);
     }
 
     public static String walletCardsText(Map<String, String> cards) {

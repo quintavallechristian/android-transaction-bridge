@@ -5,15 +5,13 @@ public final class DeliveryOutcome {
 
     public final State state;
     public final long retryDelayMillis;
-    public final String message;
 
-    private DeliveryOutcome(State state, long retryDelayMillis, String message) {
+    private DeliveryOutcome(State state, long retryDelayMillis) {
         this.state = state;
         this.retryDelayMillis = retryDelayMillis;
-        this.message = message;
     }
 
-    static DeliveryOutcome of(State state, long retryDelayMillis, String message) {
-        return new DeliveryOutcome(state, retryDelayMillis, message);
+    static DeliveryOutcome of(State state, long retryDelayMillis) {
+        return new DeliveryOutcome(state, retryDelayMillis);
     }
 }

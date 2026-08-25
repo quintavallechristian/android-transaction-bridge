@@ -38,6 +38,4 @@ public final class GoogleWalletNotificationParser implements NotificationParser 
             return null;
         }
     }
-
-    public Map<String, String> cards() { return cards; }
 }

@@ -40,7 +40,7 @@ public final class MainActivity extends Activity {
         root.addView(title("Transaction Bridge"), margin(0, 0, 0, 8));
         root.addView(text("A local Android notification bridge for HTTPS webhooks.", MUTED, 16), margin(0, 0, 0, 24));
 
-        if (!io.github.transactionbridge.Settings.isConfigured(this)) {
+        if (!Settings.isConfigured(this)) {
             root.addView(text("Set an HTTPS webhook to begin. Bearer authentication is optional.", INK, 16), margin(0, 0, 0, 16));
             root.addView(button("Open settings", v -> showSettings()), margin(0, 0, 0, 12));
         } else {
@@ -51,7 +51,7 @@ public final class MainActivity extends Activity {
             root.addView(text("Pending deliveries: " + queue.size(), MUTED, 14), margin(0, 12, 0, 0));
             if (queue.size() > 0) root.addView(button("Retry pending delivery", v -> {
                 queue.retryFirstNow();
-                DeliveryRunner.install(this);
+                DeliveryRunner.start(this);
                 showHome();
             }), margin(0, 8, 0, 0));
             AttentionLog attention = new AttentionLog(AttentionLog.preferences(this, "delivery_attention"));
@@ -59,7 +59,7 @@ public final class MainActivity extends Activity {
             if (attention.count() > 0) {
                 root.addView(button("Retry first rejected delivery", v -> {
                     attention.requeueFirst(queue);
-                    DeliveryRunner.install(this);
+                    DeliveryRunner.start(this);
                     showHome();
                 }), margin(0, 8, 0, 0));
                 root.addView(button("Delete first rejected delivery", v -> {
@@ -77,7 +77,7 @@ public final class MainActivity extends Activity {
         root.addView(title("Settings"), margin(0, 0, 0, 20));
 
         EditText endpoint = field("HTTPS webhook URL", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_URI);
-        endpoint.setText(io.github.transactionbridge.Settings.endpoint(this));
+        endpoint.setText(Settings.endpoint(this));
         root.addView(endpoint, margin(0, 0, 0, 12));
         EditText token = field("Bearer token (optional; blank keeps current)", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         root.addView(token, margin(0, 0, 0, 8));
@@ -85,23 +85,21 @@ public final class MainActivity extends Activity {
 
         root.addView(text("Payload", INK, 16), margin(0, 0, 0, 4));
         RadioGroup payload = new RadioGroup(this);
-        RadioButton minimal = radio("Minimal (recommended)", "minimal".equals(io.github.transactionbridge.Settings.payloadMode(this)));
-        RadioButton full = radio("Full (includes notification text)", "full".equals(io.github.transactionbridge.Settings.payloadMode(this)));
+        RadioButton minimal = radio("Minimal (recommended)", Settings.PAYLOAD_MINIMAL.equals(Settings.payloadMode(this)));
+        RadioButton full = radio("Full (includes notification text)", Settings.PAYLOAD_FULL.equals(Settings.payloadMode(this)));
         payload.addView(minimal);
         payload.addView(full);
         root.addView(payload, margin(0, 0, 0, 16));
 
         root.addView(text("Sources", INK, 16), margin(0, 0, 0, 4));
         Map<String, CheckBox> checks = new LinkedHashMap<>();
-        addSource(checks, "ING", io.github.transactionbridge.Settings.SOURCE_ING);
-        addSource(checks, "IsyBank", io.github.transactionbridge.Settings.SOURCE_ISYBANK);
-        addSource(checks, "Revolut", io.github.transactionbridge.Settings.SOURCE_REVOLUT);
-        addSource(checks, "Crypto.com", io.github.transactionbridge.Settings.SOURCE_CRYPTO_COM);
-        addSource(checks, "Google Wallet", io.github.transactionbridge.Settings.SOURCE_GOOGLE_WALLET);
+        Map<String, String> walletCards = new LinkedHashMap<>(Settings.walletCards(this));
+        for (ParserRegistry.Provider provider : ParserRegistry.defaultRegistry(walletCards).providers()) {
+            addSource(checks, provider.label, provider.settingKey);
+        }
 
         root.addView(text("Google Wallet cards", INK, 16), margin(0, 16, 0, 4));
         root.addView(text("Wallet notifications show only the last four card digits. Add a local name so the bridge can identify the card. Full card numbers are never requested or stored; notifications from unknown cards are ignored.", MUTED, 13), margin(0, 0, 0, 8));
-        Map<String, String> walletCards = new LinkedHashMap<>(io.github.transactionbridge.Settings.walletCards(this));
         root.addView(text("Last 4 digits", INK, 13), margin(0, 0, 0, 2));
         EditText cardDigits = field("1234", InputType.TYPE_CLASS_NUMBER);
         cardDigits.setFilters(new InputFilter[]{new InputFilter.LengthFilter(4)});
@@ -112,7 +110,7 @@ public final class MainActivity extends Activity {
         LinearLayout configuredCards = column();
         root.addView(button("Add or update card", v -> {
             try {
-                io.github.transactionbridge.Settings.putWalletCard(walletCards, cardDigits.getText().toString(), cardName.getText().toString());
+                Settings.putWalletCard(walletCards, cardDigits.getText().toString(), cardName.getText().toString());
                 cardDigits.setText("");
                 cardName.setText("");
                 renderWalletCards(configuredCards, walletCards);
@@ -125,14 +123,14 @@ public final class MainActivity extends Activity {
 
         root.addView(button("Save", v -> {
             try {
-                io.github.transactionbridge.Settings.save(this, endpoint.getText().toString(), token.getText().toString());
+                Settings.save(this, endpoint.getText().toString(), token.getText().toString());
                 Set<String> sources = new LinkedHashSet<>();
                 for (Map.Entry<String, CheckBox> item : checks.entrySet()) if (item.getValue().isChecked()) sources.add(item.getKey());
-                io.github.transactionbridge.Settings.saveSources(this, sources);
-                io.github.transactionbridge.Settings.savePayloadMode(this, full.isChecked() ? io.github.transactionbridge.Settings.PAYLOAD_FULL : io.github.transactionbridge.Settings.PAYLOAD_MINIMAL);
-                io.github.transactionbridge.Settings.saveWalletCards(this, walletCards);
+                Settings.saveSources(this, sources);
+                Settings.savePayloadMode(this, full.isChecked() ? Settings.PAYLOAD_FULL : Settings.PAYLOAD_MINIMAL);
+                Settings.saveWalletCards(this, walletCards);
                 NotificationBridgeListener.refreshConfiguration();
-                DeliveryRunner.install(this);
+                DeliveryRunner.start(this);
                 showHome();
             } catch (IllegalArgumentException | IllegalStateException error) {
                 Toast.makeText(this, error.getMessage(), Toast.LENGTH_LONG).show();
@@ -147,7 +145,7 @@ public final class MainActivity extends Activity {
         CheckBox check = new CheckBox(this);
         check.setText(label);
         check.setTextColor(INK);
-        check.setChecked(io.github.transactionbridge.Settings.sourceEnabled(this, source));
+        check.setChecked(Settings.sourceEnabled(this, source));
         checks.put(source, check);
         root.addView(check, margin(0, 0, 0, 0));
     }
@@ -239,7 +237,7 @@ public final class MainActivity extends Activity {
             TextView label = text("•••• " + card.getKey() + " — " + card.getValue(), INK, 14);
             row.addView(label, new LinearLayout.LayoutParams(0, -2, 1));
             row.addView(button("Remove", v -> {
-                io.github.transactionbridge.Settings.removeWalletCard(cards, card.getKey());
+                cards.remove(card.getKey());
                 renderWalletCards(container, cards);
             }), new LinearLayout.LayoutParams(-2, -2));
             container.addView(row, margin(0, 4, 0, 4));

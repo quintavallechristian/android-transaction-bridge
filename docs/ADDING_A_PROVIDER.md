@@ -72,49 +72,18 @@ Edit `ParserRegistry.java`:
 public static final String EXAMPLE_BANK_PACKAGE = "com.example.bank";
 ```
 
-Then register one parser instance in `defaultRegistry()`:
+Then register the package, setting key, UI label, and parser in `defaultRegistry()`:
 
 ```java
-registry.register(EXAMPLE_BANK_PACKAGE, new ExampleBankNotificationParser());
+registry.register(EXAMPLE_BANK_PACKAGE, "example_bank", "Example Bank",
+        new ExampleBankNotificationParser());
 ```
 
 No `AndroidManifest.xml` change is required. `NotificationListenerService` receives notifications system-wide after the user grants access; `ParserRegistry` decides which packages are supported.
 
-## 3. Add the provider setting
+That single registration also creates the enabled-by-default setting and the checkbox shown in the app. The setting key (`example_bank`) is separate from the webhook source (`example-bank-notification`). Unknown or disabled packages are ignored before their notification text is stored.
 
-Edit `Settings.java`:
-
-```java
-public static final String SOURCE_EXAMPLE_BANK = "example_bank";
-```
-
-Add it to `DEFAULT_SOURCES` if it should be enabled on a fresh installation.
-
-The settings source identifies the on/off switch. It is separate from the transaction's webhook `source`: `example_bank` may control a parser that emits `example-bank-notification`.
-
-## 4. Connect package and setting
-
-Edit `NotificationBridgeListener.sourceForPackage()`:
-
-```java
-if (ParserRegistry.EXAMPLE_BANK_PACKAGE.equals(packageName)) {
-    return Settings.SOURCE_EXAMPLE_BANK;
-}
-```
-
-This check happens before parsing. Unknown or disabled packages are ignored without storing their notification text.
-
-## 5. Expose the switch
-
-Edit `MainActivity.showSettings()`:
-
-```java
-addSource(checks, "Example Bank", Settings.SOURCE_EXAMPLE_BANK);
-```
-
-No provider-specific UI should be added unless the parser genuinely needs user configuration. Prefer a parser derived only from the notification text.
-
-## 6. Add tests
+## 3. Add tests
 
 Edit:
 
@@ -138,12 +107,14 @@ assertNull(new ExampleBankNotificationParser().parse(TIME,
 Also verify the registry mapping:
 
 ```java
-assertTrue(registry.supports(ParserRegistry.EXAMPLE_BANK_PACKAGE));
+ParserRegistry.Provider provider = registry.providerFor(ParserRegistry.EXAMPLE_BANK_PACKAGE);
+assertEquals("example_bank", provider.settingKey);
+assertEquals("Example Bank", provider.label);
 ```
 
 Use more fixtures only when they represent real format variants. Do not add speculative regex alternatives.
 
-## 7. Document and verify
+## 4. Document and verify
 
 Update the supported-provider list or README when the user-visible support changes. Record the notification language and app version observed in the pull request.
 
@@ -160,10 +131,7 @@ Before opening the pull request, search the diff for personal information and co
 | File | Change |
 |---|---|
 | `ExampleBankNotificationParser.java` | New pure parser |
-| `ParserRegistry.java` | Package constant and parser registration |
-| `Settings.java` | Source setting and default |
-| `NotificationBridgeListener.java` | Package-to-setting mapping |
-| `MainActivity.java` | Provider checkbox |
+| `ParserRegistry.java` | Package, setting, label, and parser registration |
 | `NotificationParserTest.java` | Positive, negative, and registry checks |
 | `README.md` | User-visible support, if listed |
 

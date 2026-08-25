@@ -23,8 +23,4 @@ public final class IngNotificationParser implements NotificationParser {
             return null;
         }
     }
-
-    public static Transaction parseNotification(long occurredAt, String rawText) {
-        return new IngNotificationParser().parse(occurredAt, rawText);
-    }
 }
