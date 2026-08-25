@@ -17,6 +17,15 @@ public final class NotificationParserTest {
                 "Operazione autorizzata: 24.61 euro, Example Market. Non sei stato tu? Blocca subito la carta.");
         assertEquals("24.61", ing.amount.toPlainString());
         assertEquals("Example Market", ing.merchant);
+
+        Transaction directDebit = new IngNotificationParser().parse(TIME,
+                "Addebito diretto di 7.99 euro richiesto da Creditor id. IT00ZZZ0000000000000000 "
+                        + "EXAMPLE MOBILE: pagato! Non ti risulta? Contattaci subito.");
+        assertEquals("7.99", directDebit.amount.toPlainString());
+        assertEquals("EXAMPLE MOBILE", directDebit.merchant);
+        assertEquals("ing-notification", directDebit.source);
+        assertNull(new IngNotificationParser().parse(TIME,
+                "Addebito diretto di 7.99 euro richiesto da EXAMPLE MOBILE: in elaborazione."));
         assertNull(new IngNotificationParser().parse(TIME, "Saldo disponibile: 24.61 euro"));
 
         Transaction crypto = new CryptoComNotificationParser().parse(TIME,
