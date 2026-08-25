@@ -12,7 +12,6 @@ public final class ParserRegistry {
     public static final String ING_PACKAGE = "it.ing.banking";
     public static final String GOOGLE_WALLET_PACKAGE = "com.google.android.apps.walletnfcrel";
     public static final String REVOLUT_PACKAGE = "com.revolut.revolut";
-    public static final String COVERFLEX_PACKAGE = "com.coverflex";
 
     private final Map<String, NotificationParser> parsers = new LinkedHashMap<>();
 
@@ -25,7 +24,6 @@ public final class ParserRegistry {
         registry.register(ING_PACKAGE, new IngNotificationParser());
         registry.register(GOOGLE_WALLET_PACKAGE, new GoogleWalletNotificationParser(walletCards));
         registry.register(REVOLUT_PACKAGE, new RevolutNotificationParser());
-        registry.register(COVERFLEX_PACKAGE, new CoverflexNotificationParser());
         return registry;
     }
 

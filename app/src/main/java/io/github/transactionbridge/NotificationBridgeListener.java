@@ -29,6 +29,11 @@ public final class NotificationBridgeListener extends NotificationListenerServic
         handler = value;
     }
 
+    public static void refreshConfiguration() {
+        NotificationBridgeListener value = connected;
+        if (value != null) value.registry = ParserRegistry.defaultRegistry(Settings.walletCards(value));
+    }
+
     @Override public void onCreate() {
         super.onCreate();
         DeliveryRunner.install(this);
@@ -39,7 +44,7 @@ public final class NotificationBridgeListener extends NotificationListenerServic
 
     @Override public void onListenerConnected() {
         connected = this;
-        if (registry == null) registry = ParserRegistry.defaultRegistry(Settings.walletCards(this));
+        registry = ParserRegistry.defaultRegistry(Settings.walletCards(this));
         Handler value = handler;
         if (value != null) value.onNetworkAvailable(this);
     }
@@ -124,7 +129,6 @@ public final class NotificationBridgeListener extends NotificationListenerServic
         if (ParserRegistry.ISYBANK_PACKAGE.equals(packageName)) return Settings.SOURCE_ISYBANK;
         if (ParserRegistry.REVOLUT_PACKAGE.equals(packageName)) return Settings.SOURCE_REVOLUT;
         if (ParserRegistry.CRYPTO_COM_PACKAGE.equals(packageName)) return Settings.SOURCE_CRYPTO_COM;
-        if (ParserRegistry.COVERFLEX_PACKAGE.equals(packageName)) return Settings.SOURCE_COVERFLEX;
         if (ParserRegistry.GOOGLE_WALLET_PACKAGE.equals(packageName)) return Settings.SOURCE_GOOGLE_WALLET;
         return null;
     }

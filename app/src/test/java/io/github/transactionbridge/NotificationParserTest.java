@@ -26,12 +26,6 @@ public final class NotificationParserTest {
         assertEquals("EUR", crypto.currency);
         assertNull(new CryptoComNotificationParser().parse(TIME, "You received 17.45 EUR"));
 
-        Transaction coverflex = new CoverflexNotificationParser().parse(TIME,
-                "Pagamento di €44.80 confermato Hai speso €44.80 da Sumup *Example Shop");
-        assertEquals("Example Shop", coverflex.merchant);
-        assertNull(new CoverflexNotificationParser().parse(TIME,
-                "Pagamento di €44.80 rifiutato Hai speso €44.80 da Example Shop"));
-
         Transaction revolut = new RevolutNotificationParser().parse(TIME,
                 "Example Petrol ⛽ Hai speso 28,80 € Saldo di EUR: 669,78 €");
         assertEquals("28.80", revolut.amount.toPlainString());
@@ -73,10 +67,27 @@ public final class NotificationParserTest {
         cards.put("1501", "Example Card");
         ParserRegistry registry = ParserRegistry.defaultRegistry(cards);
         assertTrue(registry.supports(ParserRegistry.ING_PACKAGE));
-        assertTrue(registry.supports(ParserRegistry.COVERFLEX_PACKAGE));
         assertFalse(registry.supports("com.example.other"));
         assertEquals("ing-notification", registry.parse(ParserRegistry.ING_PACKAGE, TIME,
                 "Operazione autorizzata: 1,25 euro, Example Market.").source);
         assertNull(registry.parse("com.example.other", TIME, "Example Market 1,25 EUR"));
+    }
+
+    @Test public void walletCardsUseSeparateValidatedDigitsAndNames() {
+        Map<String, String> cards = new java.util.LinkedHashMap<>();
+        Settings.putWalletCard(cards, " 1501 ", " Personal card ");
+        assertEquals("Personal card", cards.get("1501"));
+        Settings.putWalletCard(cards, "1501", "Business card");
+        assertEquals("Business card", cards.get("1501"));
+        assertEquals(cards, Settings.parseWalletCards(Settings.walletCardsText(cards)));
+        Settings.removeWalletCard(cards, "1501");
+        assertTrue(cards.isEmpty());
+
+        try {
+            Settings.putWalletCard(cards, "501", "Invalid");
+            org.junit.Assert.fail("Expected invalid suffix");
+        } catch (IllegalArgumentException expected) {
+            assertEquals("Enter exactly the last 4 card digits", expected.getMessage());
+        }
     }
 }

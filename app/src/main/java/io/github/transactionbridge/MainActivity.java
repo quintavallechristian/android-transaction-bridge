@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.text.InputFilter;
 import android.text.InputType;
 import android.view.View;
 import android.widget.Button;
@@ -96,14 +97,31 @@ public final class MainActivity extends Activity {
         addSource(checks, "IsyBank", io.github.transactionbridge.Settings.SOURCE_ISYBANK);
         addSource(checks, "Revolut", io.github.transactionbridge.Settings.SOURCE_REVOLUT);
         addSource(checks, "Crypto.com", io.github.transactionbridge.Settings.SOURCE_CRYPTO_COM);
-        addSource(checks, "Coverflex", io.github.transactionbridge.Settings.SOURCE_COVERFLEX);
         addSource(checks, "Google Wallet", io.github.transactionbridge.Settings.SOURCE_GOOGLE_WALLET);
 
-        EditText cards = field("Wallet cards: 1234=source (one per line)", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_MULTI_LINE);
-        cards.setSingleLine(false);
-        cards.setMinLines(3);
-        cards.setText(formatCards(io.github.transactionbridge.Settings.walletCards(this)));
-        root.addView(cards, margin(0, 8, 0, 20));
+        root.addView(text("Google Wallet cards", INK, 16), margin(0, 16, 0, 4));
+        root.addView(text("Wallet notifications show only the last four card digits. Add a local name so the bridge can identify the card. Full card numbers are never requested or stored; notifications from unknown cards are ignored.", MUTED, 13), margin(0, 0, 0, 8));
+        Map<String, String> walletCards = new LinkedHashMap<>(io.github.transactionbridge.Settings.walletCards(this));
+        root.addView(text("Last 4 digits", INK, 13), margin(0, 0, 0, 2));
+        EditText cardDigits = field("1234", InputType.TYPE_CLASS_NUMBER);
+        cardDigits.setFilters(new InputFilter[]{new InputFilter.LengthFilter(4)});
+        root.addView(cardDigits, margin(0, 0, 0, 8));
+        root.addView(text("Card name", INK, 13), margin(0, 0, 0, 2));
+        EditText cardName = field("For example: Personal ING", InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+        root.addView(cardName, margin(0, 0, 0, 8));
+        LinearLayout configuredCards = column();
+        root.addView(button("Add or update card", v -> {
+            try {
+                io.github.transactionbridge.Settings.putWalletCard(walletCards, cardDigits.getText().toString(), cardName.getText().toString());
+                cardDigits.setText("");
+                cardName.setText("");
+                renderWalletCards(configuredCards, walletCards);
+            } catch (IllegalArgumentException error) {
+                Toast.makeText(this, error.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        }), margin(0, 0, 0, 8));
+        root.addView(configuredCards, margin(0, 0, 0, 20));
+        renderWalletCards(configuredCards, walletCards);
 
         root.addView(button("Save", v -> {
             try {
@@ -112,7 +130,8 @@ public final class MainActivity extends Activity {
                 for (Map.Entry<String, CheckBox> item : checks.entrySet()) if (item.getValue().isChecked()) sources.add(item.getKey());
                 io.github.transactionbridge.Settings.saveSources(this, sources);
                 io.github.transactionbridge.Settings.savePayloadMode(this, full.isChecked() ? io.github.transactionbridge.Settings.PAYLOAD_FULL : io.github.transactionbridge.Settings.PAYLOAD_MINIMAL);
-                io.github.transactionbridge.Settings.saveWalletCards(this, cards.getText().toString());
+                io.github.transactionbridge.Settings.saveWalletCards(this, walletCards);
+                NotificationBridgeListener.refreshConfiguration();
                 DeliveryRunner.install(this);
                 showHome();
             } catch (IllegalArgumentException | IllegalStateException error) {
@@ -208,12 +227,22 @@ public final class MainActivity extends Activity {
 
     private int dp(int value) { return Math.round(value * getResources().getDisplayMetrics().density); }
 
-    private static String formatCards(Map<String, String> cards) {
-        StringBuilder value = new StringBuilder();
-        for (Map.Entry<String, String> item : cards.entrySet()) {
-            if (value.length() > 0) value.append('\n');
-            value.append(item.getKey()).append('=').append(item.getValue());
+    private void renderWalletCards(LinearLayout container, Map<String, String> cards) {
+        container.removeAllViews();
+        if (cards.isEmpty()) {
+            container.addView(text("No Wallet cards configured.", MUTED, 13), margin(0, 0, 0, 0));
+            return;
         }
-        return value.toString();
+        for (Map.Entry<String, String> card : new LinkedHashMap<>(cards).entrySet()) {
+            LinearLayout row = new LinearLayout(this);
+            row.setOrientation(LinearLayout.HORIZONTAL);
+            TextView label = text("•••• " + card.getKey() + " — " + card.getValue(), INK, 14);
+            row.addView(label, new LinearLayout.LayoutParams(0, -2, 1));
+            row.addView(button("Remove", v -> {
+                io.github.transactionbridge.Settings.removeWalletCard(cards, card.getKey());
+                renderWalletCards(container, cards);
+            }), new LinearLayout.LayoutParams(-2, -2));
+            container.addView(row, margin(0, 4, 0, 4));
+        }
     }
 }
