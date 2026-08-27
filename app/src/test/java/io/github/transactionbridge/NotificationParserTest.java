@@ -52,6 +52,12 @@ public final class NotificationParserTest {
                 "È stato inserito un bonifico istantaneo di 30,00 € dal conto xxx421 in favore dell'IBAN DE*** "
                         + "in data 13.08.2026 alle ore 17:14.");
         assertEquals("Bonifico DE***", transfer.merchant);
+
+        Transaction european = new IsyBankNotificationParser().parse(TIME,
+                "E' stato inserito il pagamento di un bonifico europeo di 128,50 € dal conto xxx421 " +
+                        "in favore dell'IBAN DE*** il 26.08.2026 alle ore 17:59 con data di addebito il 27.08.2026.");
+        assertEquals("128.50", european.amount.toPlainString());
+        assertEquals("Bonifico DE***", european.merchant);
     }
 
     @Test public void parsesWalletOnlyWhenConfiguredCardMatches() {

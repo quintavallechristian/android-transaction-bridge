@@ -13,8 +13,8 @@ public final class IsyBankNotificationParser implements NotificationParser {
     private static final Pattern DIRECT_DEBIT = Pattern.compile(
             "(?:E'|È) stato addebitato il pagamento di una domiciliazione di ([0-9][0-9.,]*) € da parte di (.+?) sul conto .+? in data (\\d{2}\\.\\d{2}\\.\\d{4})",
             Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
-    private static final Pattern INSTANT_TRANSFER = Pattern.compile(
-            "(?:E'|È) stato inserito un bonifico istantaneo di ([0-9][0-9.,]*) € dal conto .+? in favore dell'IBAN (\\S+) in data (\\d{2}\\.\\d{2}\\.\\d{4}) alle ore (\\d{2}:\\d{2})",
+    private static final Pattern TRANSFER = Pattern.compile(
+            "(?:E'|È) stato inserito (?:il pagamento di )?un bonifico (?:istantaneo|europeo) di ([0-9][0-9.,]*) € dal conto .+? in favore dell'IBAN (\\S+) (?:in data|il) (\\d{2}\\.\\d{2}\\.\\d{4}) alle ore (\\d{2}:\\d{2})(?: con data di addebito il (\\d{2}\\.\\d{2}\\.\\d{4}))?",
             Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd.MM.uuuu");
     private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("dd.MM.uuuu HH:mm");
@@ -24,7 +24,7 @@ public final class IsyBankNotificationParser implements NotificationParser {
         Matcher matcher = DIRECT_DEBIT.matcher(text);
         boolean instantTransfer = false;
         if (!matcher.find()) {
-            matcher = INSTANT_TRANSFER.matcher(text);
+            matcher = TRANSFER.matcher(text);
             if (!matcher.find()) return null;
             instantTransfer = true;
         }
@@ -32,7 +32,7 @@ public final class IsyBankNotificationParser implements NotificationParser {
             BigDecimal amount = ParserSupport.amount(matcher.group(1));
             if (amount.signum() <= 0) return null;
             long occurredAt = instantTransfer
-                    ? LocalDateTime.parse(matcher.group(3) + " " + matcher.group(4), DATE_TIME)
+                    ? LocalDateTime.parse((matcher.group(5) == null ? matcher.group(3) : matcher.group(5)) + " " + matcher.group(4), DATE_TIME)
                             .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
                     : LocalDate.parse(matcher.group(3), DATE)
                             .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
