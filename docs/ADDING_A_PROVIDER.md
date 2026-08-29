@@ -1,8 +1,18 @@
 # Adding a notification provider
 
-This guide covers Android apps that publish payment notifications with a stable text format. If the payment is already reported by Google Wallet, do not add a provider: configure the card's last four digits and local name in Transaction Bridge settings.
+This guide explains how to add a provider for a payment notification format supported by an Android app. Providers should be added for every relevant notification type, including notifications that may also be reported by another source.
 
-## Before writing code
+## AI way
+
+You can ask the `payment-provider-from-screenshot` skill to add the provider from an attached payment-notification screenshot. The skill extracts the visible format, creates anonymized fixtures, adds the parser and registry entry, writes focused tests, and updates the README.
+
+The screenshot must be sufficient to identify the notification structure. Provide the Android package name separately if it is not visible or already known; the skill must not guess it. Review the generated diff and run the verification commands below before committing. Real names, account identifiers, IBANs, card digits, and notification IDs must never be committed.
+
+## Manual way
+
+Follow the steps below when implementing the provider manually.
+
+### Before writing code
 
 Collect:
 
@@ -13,7 +23,7 @@ Collect:
 
 Anonymize every fixture before committing it. Replace names, merchants, IBANs, account identifiers, card digits, and other personal data while preserving punctuation and structure. Never commit credentials or a real notification dump.
 
-## 1. Add the parser
+### 1. Add the parser
 
 Create:
 
@@ -64,7 +74,7 @@ Parser rules:
 
 Do not change `Transaction`, `WebhookPayload`, the queue, or delivery code to add a provider.
 
-## 2. Register the Android package
+### 2. Register the Android package
 
 Edit `ParserRegistry.java`:
 
@@ -83,7 +93,7 @@ No `AndroidManifest.xml` change is required. `NotificationListenerService` recei
 
 That single registration also creates the enabled-by-default setting and the checkbox shown in the app. The setting key (`example_bank`) is separate from the webhook source (`example-bank-notification`). Unknown or disabled packages are ignored before their notification text is stored.
 
-## 3. Add tests
+### 3. Add tests
 
 Edit:
 
@@ -114,7 +124,7 @@ assertEquals("Example Bank", provider.label);
 
 Use more fixtures only when they represent real format variants. Do not add speculative regex alternatives.
 
-## 4. Document and verify
+### 4. Document and verify
 
 Update the supported-provider list or README when the user-visible support changes. Record the notification language and app version observed in the pull request.
 
@@ -126,13 +136,13 @@ Run:
 
 Before opening the pull request, search the diff for personal information and confirm that the parser still rejects the negative fixture.
 
-## Files changed for a normal provider
+### Files changed for a normal provider
 
-| File | Change |
-|---|---|
-| `ExampleBankNotificationParser.java` | New pure parser |
-| `ParserRegistry.java` | Package, setting, label, and parser registration |
-| `NotificationParserTest.java` | Positive, negative, and registry checks |
-| `README.md` | User-visible support, if listed |
+| File                                 | Change                                           |
+| ------------------------------------ | ------------------------------------------------ |
+| `ExampleBankNotificationParser.java` | New pure parser                                  |
+| `ParserRegistry.java`                | Package, setting, label, and parser registration |
+| `NotificationParserTest.java`        | Positive, negative, and registry checks          |
+| `README.md`                          | User-visible support, if listed                  |
 
 That is the complete path. Delivery, retry, privacy modes, deterministic IDs, and webhook serialization are shared automatically.

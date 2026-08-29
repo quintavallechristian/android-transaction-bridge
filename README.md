@@ -13,6 +13,43 @@ Transaction Bridge is a small Android app that turns supported payment notificat
 
 Pending deliveries are stored locally in FIFO order. Supported HTTP `2xx` responses remove an item; temporary failures are retried with bounded backoff. The app has no account, analytics, crash reporting, or telemetry service.
 
+## Supported notification formats
+
+Transaction Bridge currently supports the following notification sources. The parser reads the notification title, text, and expanded text, joins them, normalizes whitespace, and ignores notifications that do not match one of these formats.
+
+### Crypto.com
+
+- Card payments: `12.50 EUR spent at Merchant Name`
+- EUR deposits: `You successfully deposited EUR 100.00 into your EUR Account`
+
+### IsyBank
+
+- Direct debits: `È stato addebitato il pagamento di una domiciliazione di 12,50 € da parte di Merchant Name sul conto ... in data 15.08.2026`
+- Instant or European transfers: `È stato inserito un bonifico istantaneo di 250,00 € dal conto ... in favore dell'IBAN IT... in data 15.08.2026 alle ore 10:30`
+
+For transfers, the merchant is recorded as `Bonifico` followed by the IBAN. The date and time in the notification are used as the transaction time.
+
+### ING
+
+- Authorized card payments: `Operazione autorizzata: 12,50 euro, Merchant Name. Non sei stato tu?`
+- Direct debits: `Addebito diretto di 12,50 euro richiesto da Creditor id. ABC123 Merchant Name: pagato!`
+
+### Google Wallet
+
+- Card payments: `Merchant Name 12,50 € con ... •••• 1234`
+
+The final four card digits must be associated with a local card name in Settings. Notifications from unknown cards are ignored.
+
+The card name is used to disambiguate which local account or provider owns the card and becomes part of the webhook `source`, for example `google-wallet-personal-ing-notification` or `google-wallet-crypto-notification`. Only the last four digits and the chosen local name are stored; the full card number is never requested.
+
+Google Wallet notifications are not reconciled with notifications from the underlying bank or card provider. If both sources report the same payment, they produce different `source` and transaction IDs and may therefore be delivered as two separate transactions.
+
+### Revolut
+
+- Card payments: `Merchant Name Hai speso 12,50 €`
+
+An optional suffix such as `Saldo di ...` is accepted. Transfers are not currently supported by Transaction Bridge.
+
 ## Google Wallet
 
 Google Wallet notifications identify the payment card by its last four digits. Transaction Bridge compares those digits with the cards configured on the device and uses the corresponding name in the webhook `source`, for example `google-wallet-personal-ing-notification`.
