@@ -5,7 +5,7 @@ Transaction Bridge is a small Android app that turns supported payment notificat
 ## Install and configure
 
 1. Build and install the debug APK, or install a release from GitHub Releases.
-2. Open **Settings** and enter a complete `https://` webhook URL. A Bearer token is optional.
+2. Create an HTTPS receiver by following the [webhook guide](docs/WEBHOOK.md), then open **Settings** and enter its complete URL. A Bearer token is optional.
 3. Choose `minimal` (the default) or `full` payload mode. Full mode includes the original notification text, which may contain personal information.
 4. Select the notification sources to parse.
 5. For Google Wallet, enter the last four card digits and a local card name, then select **Add or update card**.
@@ -66,7 +66,7 @@ The project requires Android SDK 36 and Java 17. The package name is `io.github.
 
 ## Webhook payload
 
-The default payload contains `version`, `id`, `source`, `occurredAt`, `amount`, `currency`, and `merchant`. The ID is deterministic so webhook consumers can safely deduplicate deliveries. `rawText` is added only in `full` mode.
+The default payload contains `version`, `id`, `source`, `occurredAt`, `amount`, `currency`, and `merchant`. The ID is deterministic so webhook consumers can safely deduplicate deliveries. `rawText` is added only in `full` mode. See [Receiving webhook data](docs/WEBHOOK.md) for the request contract, response handling, retries, and a receiver outline.
 
 ## Contributing
 

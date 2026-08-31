@@ -1,0 +1,20 @@
+name: Bug report
+description: Report a problem with payment notification parsing or delivery
+title: "Bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Never include raw notification text, credentials, webhook URLs, card numbers, IBANs, or other personal data.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Anonymized reproduction steps
+    validations:
+      required: true

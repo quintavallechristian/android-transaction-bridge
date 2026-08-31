@@ -27,6 +27,15 @@ public final class RecentTransactionLogTest {
         assertEquals(transactions.get(2).id, log.entries().get(19).id);
     }
 
+    @Test public void ignoresWhitespaceOnlyLines() {
+        MemoryStore store = new MemoryStore();
+        RecentTransactionLog log = new RecentTransactionLog(store);
+        log.record(transaction(0), "Provider");
+        store.value += "    \n";
+
+        assertEquals(1, log.entries().size());
+    }
+
     private static Transaction transaction(int amount) {
         int positiveAmount = amount + 1;
         return new Transaction(1_786_000_000_000L + amount, new BigDecimal(positiveAmount + ".00"),

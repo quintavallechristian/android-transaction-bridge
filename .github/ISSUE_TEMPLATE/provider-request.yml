@@ -1,0 +1,26 @@
+name: Payment provider request
+description: Request support for a payment notification source
+title: "Provider: "
+labels: ["provider"]
+body:
+  - type: markdown
+    attributes:
+      value: Do not upload screenshots or text containing personal data, card numbers, IBANs, account identifiers, or credentials.
+  - type: input
+    id: provider
+    attributes:
+      label: Provider name
+    validations:
+      required: true
+  - type: input
+    id: package
+    attributes:
+      label: Android package name
+      description: Provide the exact package name if known.
+  - type: textarea
+    id: format
+    attributes:
+      label: Anonymized notification format
+      description: Replace personal values while preserving punctuation and structure.
+    validations:
+      required: true

@@ -2,6 +2,13 @@ plugins {
     id("com.android.application")
 }
 
+val releaseSigningVariables = mapOf(
+    "storeFile" to System.getenv("ANDROID_SIGNING_STORE_FILE"),
+    "storePassword" to System.getenv("ANDROID_SIGNING_STORE_PASSWORD"),
+    "keyAlias" to System.getenv("ANDROID_SIGNING_KEY_ALIAS"),
+    "keyPassword" to System.getenv("ANDROID_SIGNING_KEY_PASSWORD"),
+)
+
 android {
     namespace = "io.github.transactionbridge"
     compileSdk = 36
@@ -20,9 +27,21 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
+    signingConfigs {
+        if (releaseSigningVariables.values.all { !it.isNullOrBlank() }) {
+            create("release") {
+                storeFile = file(releaseSigningVariables.getValue("storeFile")!!)
+                storePassword = releaseSigningVariables.getValue("storePassword")
+                keyAlias = releaseSigningVariables.getValue("keyAlias")
+                keyPassword = releaseSigningVariables.getValue("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 }

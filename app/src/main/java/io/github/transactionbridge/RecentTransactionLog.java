@@ -74,7 +74,7 @@ public final class RecentTransactionLog {
         String value = store.read();
         if (value == null || value.isEmpty()) return entries;
         for (String line : value.split("\\n", -1)) {
-            if (line.isEmpty()) continue;
+            if (line.isBlank()) continue;
             String[] fields = line.split("\\|", 6);
             if (fields.length != 6) throw new IllegalStateException("recent transactions are corrupt");
             try {
