@@ -19,7 +19,7 @@ public final class NotificationParserTest {
         assertEquals("Example Market", ing.merchant);
 
         Transaction directDebit = new IngNotificationParser().parse(TIME,
-                "Addebito diretto di 7.99 euro richiesto da Creditor id. IT00ZZZ0000000000000000 "
+                "Addebito diretto di 7.99 euro richiesto da Creditor id. IT00ZZZ**************** "
                         + "EXAMPLE MOBILE: pagato! Non ti risulta? Contattaci subito.");
         assertEquals("7.99", directDebit.amount.toPlainString());
         assertEquals("EXAMPLE MOBILE", directDebit.merchant);
