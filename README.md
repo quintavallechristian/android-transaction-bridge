@@ -34,6 +34,12 @@ For transfers, the merchant is recorded as `Bonifico` followed by the IBAN. The 
 - Authorized card payments: `Operazione autorizzata: 12,50 euro, Merchant Name. Non sei stato tu?`
 - Direct debits: `Addebito diretto di 12,50 euro richiesto da Creditor id. ABC123 Merchant Name: pagato!`
 
+### Revolut
+
+- Card payments: `Merchant Name Hai speso 12,50 €`
+
+An optional suffix such as `Saldo di ...` is accepted. Transfers are not currently supported by Transaction Bridge.
+
 ### Google Wallet
 
 - Card payments: `Merchant Name 12,50 € con ... •••• 1234`
@@ -43,12 +49,6 @@ The final four card digits must be associated with a local card name in Settings
 The card name is used to disambiguate which local account or provider owns the card and becomes part of the webhook `source`, for example `google-wallet-personal-ing-notification` or `google-wallet-crypto-notification`. Only the last four digits and the chosen local name are stored; the full card number is never requested.
 
 Google Wallet notifications are not reconciled with notifications from the underlying bank or card provider. If both sources report the same payment, they produce different `source` and transaction IDs and may therefore be delivered as two separate transactions.
-
-### Revolut
-
-- Card payments: `Merchant Name Hai speso 12,50 €`
-
-An optional suffix such as `Saldo di ...` is accepted. Transfers are not currently supported by Transaction Bridge.
 
 ## Google Wallet
 
