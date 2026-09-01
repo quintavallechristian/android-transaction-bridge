@@ -10,7 +10,9 @@ public final class WebhookUploader {
     private final BiConsumer<DeliveryRecord, String> attentionLog;
 
     public WebhookUploader(PersistentDeliveryQueue queue, WebhookClient client, BiConsumer<DeliveryRecord, String> attentionLog) {
-        if (queue == null || client == null) throw new IllegalArgumentException("queue and client are required");
+        if (queue == null || client == null || attentionLog == null) {
+            throw new IllegalArgumentException("queue, client and attention log are required");
+        }
         this.queue = queue;
         this.client = client;
         this.attentionLog = attentionLog;
@@ -31,8 +33,8 @@ public final class WebhookUploader {
                 return DeliveryOutcome.of(DeliveryOutcome.State.SUSPENDED, 0);
             }
             if (action == RetryPolicy.Action.ATTENTION) {
-                DeliveryRecord removed = queue.removeFirst();
-                if (attentionLog != null) attentionLog.accept(removed, "HTTP " + response.statusCode);
+                attentionLog.accept(item, "HTTP " + response.statusCode);
+                queue.removeFirst();
                 return DeliveryOutcome.of(DeliveryOutcome.State.NEEDS_ATTENTION, 0);
             }
             long delay = queue.deferFirst(nowMillis, response.retryAfter);

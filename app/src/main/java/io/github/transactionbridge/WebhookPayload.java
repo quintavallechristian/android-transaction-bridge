@@ -5,10 +5,14 @@ public final class WebhookPayload {
     private WebhookPayload() {}
 
     public static String from(Transaction transaction, PayloadMode mode) {
+        return from(transaction, mode, transaction == null ? null : transaction.rawText);
+    }
+
+    public static String from(Transaction transaction, PayloadMode mode, String rawText) {
         if (transaction == null) throw new IllegalArgumentException("transaction is required");
         return createJson(transaction.id, transaction.source, transaction.occurredAtIso(),
                 transaction.amount.toPlainString(), transaction.currency, transaction.merchant,
-                transaction.rawText, mode);
+                rawText, mode);
     }
 
     public static String createJson(

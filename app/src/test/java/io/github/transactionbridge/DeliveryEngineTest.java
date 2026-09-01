@@ -2,6 +2,11 @@ package io.github.transactionbridge;
 
 import org.junit.Test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+
 import static org.junit.Assert.*;
 
 public final class DeliveryEngineTest {
@@ -41,9 +46,47 @@ public final class DeliveryEngineTest {
         assertTrue(minimal.startsWith("{\"version\":1"));
     }
 
+    @Test public void rejectedDeliveryStaysQueuedWhenAttentionLogFails() throws Exception {
+        PersistentDeliveryQueue queue = new PersistentDeliveryQueue(new MemoryStore());
+        queue.enqueue("a", "{}");
+        HttpURLConnection connection = new FakeConnection(422);
+        WebhookClient client = new WebhookClient(url -> connection, 1000, 1000);
+        WebhookUploader uploader = new WebhookUploader(queue, client, (item, reason) -> {
+            throw new IllegalStateException("attention write failed");
+        });
+
+        assertEquals(DeliveryOutcome.State.RETRY_SCHEDULED,
+                uploader.deliverNext("https://example.test/hook", "", 1000).state);
+        assertEquals("a", queue.peek().id);
+    }
+
+    @Test public void uploaderRequiresAttentionLog() {
+        try {
+            new WebhookUploader(new PersistentDeliveryQueue(new MemoryStore()), new WebhookClient(), null);
+            fail("missing attention log accepted");
+        } catch (IllegalArgumentException expected) {
+            assertTrue(expected.getMessage().contains("attention"));
+        }
+    }
+
     private static final class MemoryStore implements PersistentDeliveryQueue.Store {
         private String value = "[]";
         @Override public String read() { return value; }
         @Override public void write(String value) { this.value = value; }
+    }
+
+    private static final class FakeConnection extends HttpURLConnection {
+        private final int status;
+
+        FakeConnection(int status) throws Exception {
+            super(new URL("https://example.test/hook"));
+            this.status = status;
+        }
+
+        @Override public int getResponseCode() { return status; }
+        @Override public java.io.OutputStream getOutputStream() { return new ByteArrayOutputStream(); }
+        @Override public void disconnect() {}
+        @Override public boolean usingProxy() { return false; }
+        @Override public void connect() throws IOException {}
     }
 }

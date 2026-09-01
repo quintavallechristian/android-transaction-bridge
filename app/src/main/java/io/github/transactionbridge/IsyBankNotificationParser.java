@@ -19,7 +19,7 @@ public final class IsyBankNotificationParser implements NotificationParser {
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd.MM.uuuu");
     private static final DateTimeFormatter DATE_TIME = DateTimeFormatter.ofPattern("dd.MM.uuuu HH:mm");
 
-    @Override public Transaction parse(long ignoredOccurredAt, String rawText) {
+    @Override public Transaction parse(long notificationOccurredAt, String rawText) {
         String text = ParserSupport.normalize(rawText);
         Matcher matcher = DIRECT_DEBIT.matcher(text);
         boolean instantTransfer = false;
@@ -37,7 +37,8 @@ public final class IsyBankNotificationParser implements NotificationParser {
                     : LocalDate.parse(matcher.group(3), DATE)
                             .atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
             String merchant = instantTransfer ? "Bonifico " + matcher.group(2) : matcher.group(2).trim();
-            return new Transaction(occurredAt, amount, "EUR", merchant, text, "isybank-notification");
+            return new Transaction(occurredAt, amount, "EUR", merchant, text,
+                    "isybank-notification", Long.toString(notificationOccurredAt));
         } catch (NumberFormatException | DateTimeParseException invalidNotification) {
             return null;
         }
