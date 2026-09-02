@@ -34,6 +34,16 @@ For transfers, the merchant is recorded as `Bonifico` followed by the IBAN. The 
 - Authorized card payments: `Operazione autorizzata: 12,50 euro, Merchant Name. Non sei stato tu?`
 - Direct debits: `Addebito diretto di 12,50 euro richiesto da Creditor id. ABC123 Merchant Name: pagato!`
 
+### Revolut
+
+- Card payments: `Merchant Name Hai speso 12,50 €`
+
+An optional suffix such as `Saldo di ...` is accepted. Transfers are not currently supported by Transaction Bridge.
+
+### BBVA
+
+- Accepted card payments: `Il pagamento di 12,50 EUR in data Merchant Name effettuato con la tua carta 1234 è stato accettato.`
+
 ### Google Wallet
 
 - Card payments: `Merchant Name 12,50 € con ... •••• 1234`
@@ -43,12 +53,6 @@ The final four card digits must be associated with a local card name in Settings
 The card name is used to disambiguate which local account or provider owns the card and becomes part of the webhook `source`, for example `google-wallet-personal-ing-notification` or `google-wallet-crypto-notification`. Only the last four digits and the chosen local name are stored; the full card number is never requested.
 
 Google Wallet notifications are not reconciled with notifications from the underlying bank or card provider. If both sources report the same payment, they produce different `source` and transaction IDs and may therefore be delivered as two separate transactions.
-
-### Revolut
-
-- Card payments: `Merchant Name Hai speso 12,50 €`
-
-An optional suffix such as `Saldo di ...` is accepted. Transfers are not currently supported by Transaction Bridge.
 
 ## Google Wallet
 
@@ -66,7 +70,7 @@ The project requires Android SDK 36 and Java 17. The package name is `io.github.
 
 ## Webhook payload
 
-The default payload contains `version`, `id`, `source`, `occurredAt`, `amount`, `currency`, and `merchant`. The ID is deterministic so webhook consumers can safely deduplicate deliveries. `rawText` is added only in `full` mode. See [Receiving webhook data](docs/WEBHOOK.md) for the request contract, response handling, retries, and a receiver outline.
+The default payload contains `version`, `id`, `source`, `occurredAt`, `amount`, `currency`, and `merchant`. The ID is stable across delivery retries so webhook consumers can safely deduplicate them. A notification reposted by Android may have a new ID and should be treated as a separate observation. `rawText` is added only in `full` mode. See [Receiving webhook data](docs/WEBHOOK.md) for the request contract, response handling, retries, and a receiver outline.
 
 ## Contributing
 

@@ -3,9 +3,7 @@ package io.github.transactionbridge;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 
 /** Last recognized transactions, stored locally without notification text. */
@@ -75,11 +73,10 @@ public final class RecentTransactionLog {
         if (value == null || value.isEmpty()) return entries;
         for (String line : value.split("\\n", -1)) {
             if (line.isBlank()) continue;
-            String[] fields = line.split("\\|", 6);
-            if (fields.length != 6) throw new IllegalStateException("recent transactions are corrupt");
+            String[] fields = RecordCodec.fields(line, 6, "recent transactions are corrupt");
             try {
-                entries.add(new Entry(decode(fields[0]), Long.parseLong(fields[1]), decode(fields[2]),
-                        decode(fields[3]), decode(fields[4]), decode(fields[5])));
+                entries.add(new Entry(RecordCodec.decode(fields[0]), Long.parseLong(fields[1]), RecordCodec.decode(fields[2]),
+                        RecordCodec.decode(fields[3]), RecordCodec.decode(fields[4]), RecordCodec.decode(fields[5])));
             } catch (IllegalArgumentException error) {
                 throw new IllegalStateException("recent transactions are corrupt", error);
             }
@@ -90,18 +87,10 @@ public final class RecentTransactionLog {
     private void write(List<Entry> entries) {
         StringBuilder value = new StringBuilder();
         for (Entry entry : entries) {
-            value.append(encode(entry.id)).append('|').append(entry.occurredAt).append('|')
-                    .append(encode(entry.amount)).append('|').append(encode(entry.currency)).append('|')
-                    .append(encode(entry.merchant)).append('|').append(encode(entry.provider)).append('\n');
+            value.append(RecordCodec.encode(entry.id)).append('|').append(entry.occurredAt).append('|')
+                    .append(RecordCodec.encode(entry.amount)).append('|').append(RecordCodec.encode(entry.currency)).append('|')
+                    .append(RecordCodec.encode(entry.merchant)).append('|').append(RecordCodec.encode(entry.provider)).append('\n');
         }
         store.write(value.toString());
-    }
-
-    private static String encode(String value) {
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(value.getBytes(StandardCharsets.UTF_8));
-    }
-
-    private static String decode(String value) {
-        return new String(Base64.getUrlDecoder().decode(value), StandardCharsets.UTF_8);
     }
 }

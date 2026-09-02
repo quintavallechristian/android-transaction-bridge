@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -93,10 +92,9 @@ public final class PersistentDeliveryQueue {
         String[] lines = value.split("\\n", -1);
         for (String line : lines) {
             if (line.isEmpty()) continue;
-            String[] fields = line.split("\\|", 4);
-            if (fields.length != 4) throw new IllegalStateException("queue data is corrupt");
+            String[] fields = RecordCodec.fields(line, 4, "queue data is corrupt");
             try {
-                result.add(new DeliveryRecord(decode(fields[0]), decode(fields[3]), Integer.parseInt(fields[1]), Long.parseLong(fields[2])));
+                result.add(new DeliveryRecord(RecordCodec.decode(fields[0]), RecordCodec.decode(fields[3]), Integer.parseInt(fields[1]), Long.parseLong(fields[2])));
             } catch (IllegalArgumentException error) {
                 throw new IllegalStateException("queue data is corrupt", error);
             }
@@ -106,10 +104,7 @@ public final class PersistentDeliveryQueue {
 
     private void write(List<DeliveryRecord> items) {
         StringBuilder value = new StringBuilder();
-        for (DeliveryRecord item : items) value.append(encode(item.id)).append('|').append(item.attempts).append('|').append(item.nextAttemptAt).append('|').append(encode(item.payload)).append('\n');
+        for (DeliveryRecord item : items) value.append(RecordCodec.encode(item.id)).append('|').append(item.attempts).append('|').append(item.nextAttemptAt).append('|').append(RecordCodec.encode(item.payload)).append('\n');
         store.write(value.toString());
     }
-
-    private static String encode(String value) { return Base64.getUrlEncoder().withoutPadding().encodeToString(value.getBytes(java.nio.charset.StandardCharsets.UTF_8)); }
-    private static String decode(String value) { return new String(Base64.getUrlDecoder().decode(value), java.nio.charset.StandardCharsets.UTF_8); }
 }

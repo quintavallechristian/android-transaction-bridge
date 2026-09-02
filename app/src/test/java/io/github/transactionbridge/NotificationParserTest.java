@@ -39,6 +39,16 @@ public final class NotificationParserTest {
         assertEquals("28.80", revolut.amount.toPlainString());
         assertNull(new RevolutNotificationParser().parse(TIME,
                 "Hai ricevuto 28,80 € da Another Person"));
+
+        Transaction bbva = new BbvaNotificationParser().parse(TIME,
+                "Pagamento accettato 👍 💳 Il pagamento di 12,50 EUR in data EXAMPLE SHOP "
+                        + "effettuato con la tua carta 1234 è stato accettato.");
+        assertEquals("12.50", bbva.amount.toPlainString());
+        assertEquals("EUR", bbva.currency);
+        assertEquals("EXAMPLE SHOP", bbva.merchant);
+        assertEquals("bbva-notification", bbva.source);
+        assertNull(new BbvaNotificationParser().parse(TIME,
+                "Il pagamento di 12,50 EUR in data EXAMPLE SHOP effettuato con la tua carta 1234 è stato rifiutato."));
     }
 
     @Test public void parsesIsyBankDateAndMaskedTransferWithoutOwnerNames() {
@@ -58,6 +68,19 @@ public final class NotificationParserTest {
                         "in favore dell'IBAN DE*** il 26.08.2026 alle ore 17:59 con data di addebito il 27.08.2026.");
         assertEquals("128.50", european.amount.toPlainString());
         assertEquals("Bonifico DE***", european.merchant);
+
+        assertNull(new IsyBankNotificationParser().parse(TIME,
+                "Il saldo del conto xxx421 e' 128,50 EUR"));
+    }
+
+    @Test public void isyBankKeepsDeliveryRetriesStableButTreatsNewPostsSeparately() {
+        String text = "E' stato addebitato il pagamento di una domiciliazione di 28,89 € da parte di "
+                + "EXAMPLE PROVIDER sul conto xxx421 in data 10.08.2026";
+        IsyBankNotificationParser parser = new IsyBankNotificationParser();
+        Transaction first = parser.parse(TIME, text);
+
+        assertEquals(first.id, parser.parse(TIME, text).id);
+        org.junit.Assert.assertNotEquals(first.id, parser.parse(TIME + 1, text).id);
     }
 
     @Test public void parsesWalletOnlyWhenConfiguredCardMatches() {
@@ -85,7 +108,19 @@ public final class NotificationParserTest {
         assertEquals("ing", ing.settingKey);
         assertEquals("ing-notification", ing.parser.parse(TIME,
                 "Operazione autorizzata: 1,25 euro, Example Market.").source);
+        assertProvider(registry, ParserRegistry.CRYPTO_COM_PACKAGE, "crypto.com", "Crypto.com");
+        assertProvider(registry, ParserRegistry.ISYBANK_PACKAGE, "isybank", "IsyBank");
+        assertProvider(registry, ParserRegistry.GOOGLE_WALLET_PACKAGE, "google_wallet", "Google Wallet");
+        assertProvider(registry, ParserRegistry.REVOLUT_PACKAGE, "revolut", "Revolut");
+        assertProvider(registry, ParserRegistry.BBVA_PACKAGE, "bbva", "BBVA");
         assertNull(registry.providerFor("com.example.other"));
+    }
+
+    private static void assertProvider(ParserRegistry registry, String packageName, String settingKey, String label) {
+        ParserRegistry.Provider provider = registry.providerFor(packageName);
+        assertEquals(packageName, provider.packageName);
+        assertEquals(settingKey, provider.settingKey);
+        assertEquals(label, provider.label);
     }
 
     @Test public void walletCardsUseSeparateValidatedDigitsAndNames() {

@@ -28,4 +28,5 @@ public final class TransactionTest {
         }
         fail("invalid transaction accepted");
     }
+
 }

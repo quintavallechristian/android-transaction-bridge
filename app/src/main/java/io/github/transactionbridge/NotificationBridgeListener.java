@@ -63,27 +63,22 @@ public final class NotificationBridgeListener extends NotificationListenerServic
         if (transaction == null) transaction = provider.parser.parse(notification.getPostTime(), rawText);
         if (transaction == null) return;
 
-        // Keep the complete notification only for the opt-in full payload mode.
-        if (Settings.PAYLOAD_FULL.equals(Settings.payloadMode(this))) {
-            transaction = new Transaction(transaction.occurredAt, transaction.amount,
-                    transaction.currency, transaction.merchant, rawText, transaction.source);
-        }
+        String payload;
         try {
-            PayloadMode mode = Settings.PAYLOAD_FULL.equals(Settings.payloadMode(this))
-                    ? PayloadMode.FULL : PayloadMode.MINIMAL;
-            String payload = WebhookPayload.from(transaction, mode);
-            PersistentDeliveryQueue queue = new PersistentDeliveryQueue(
-                    PersistentDeliveryQueue.preferences(this, "delivery_queue"));
-            if (queue.enqueue(transaction.id, payload)) {
-                try {
-                    new RecentTransactionLog(RecentTransactionLog.preferences(this)).record(transaction, provider.label);
-                } catch (RuntimeException ignored) {
-                    // Observability must never block webhook delivery.
-                }
-                DeliveryRunner.start(this);
+            PayloadMode mode = Settings.PAYLOAD_FULL.equals(Settings.payloadMode(this)) ? PayloadMode.FULL : PayloadMode.MINIMAL;
+            payload = WebhookPayload.from(transaction, mode, rawText);
+        } catch (IllegalArgumentException invalidParserOutput) {
+            return;
+        }
+        PersistentDeliveryQueue queue = new PersistentDeliveryQueue(
+                PersistentDeliveryQueue.preferences(this, "delivery_queue"));
+        if (queue.enqueue(transaction.id, payload)) {
+            try {
+                new RecentTransactionLog(RecentTransactionLog.preferences(this)).record(transaction, provider.label);
+            } catch (RuntimeException ignored) {
+                // Observability must never block webhook delivery.
             }
-        } catch (RuntimeException ignored) {
-            // Invalid parser output is ignored; it must not poison the durable queue.
+            DeliveryRunner.start(this);
         }
     }
 
