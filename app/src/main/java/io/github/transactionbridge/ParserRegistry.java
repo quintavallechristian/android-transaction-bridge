@@ -13,6 +13,7 @@ public final class ParserRegistry {
     public static final String GOOGLE_WALLET_PACKAGE = "com.google.android.apps.walletnfcrel";
     public static final String REVOLUT_PACKAGE = "com.revolut.revolut";
     public static final String BBVA_PACKAGE = "com.bbva.italy";
+    public static final String HYPE_PACKAGE = "it.hype.app";
 
     public static final class Provider {
         public final String packageName;
@@ -40,6 +41,7 @@ public final class ParserRegistry {
         registry.register(GOOGLE_WALLET_PACKAGE, "google_wallet", "Google Wallet", new GoogleWalletNotificationParser(walletCards));
         registry.register(REVOLUT_PACKAGE, "revolut", "Revolut", new RevolutNotificationParser());
         registry.register(BBVA_PACKAGE, "bbva", "BBVA", new BbvaNotificationParser());
+        registry.register(HYPE_PACKAGE, "hype", "HYPE", new HypeNotificationParser());
         return registry;
     }
 

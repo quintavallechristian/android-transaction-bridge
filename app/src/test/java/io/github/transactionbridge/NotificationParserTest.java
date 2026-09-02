@@ -49,6 +49,13 @@ public final class NotificationParserTest {
         assertEquals("bbva-notification", bbva.source);
         assertNull(new BbvaNotificationParser().parse(TIME,
                 "Il pagamento di 12,50 EUR in data EXAMPLE SHOP effettuato con la tua carta 1234 è stato rifiutato."));
+
+        Transaction hype = new HypeNotificationParser().parse(TIME, "EXAMPLE SHOP, EXAMPLE CITY 12,50 €");
+        assertEquals("12.50", hype.amount.toPlainString());
+        assertEquals("EUR", hype.currency);
+        assertEquals("EXAMPLE SHOP, EXAMPLE CITY", hype.merchant);
+        assertEquals("hype-notification", hype.source);
+        assertNull(new HypeNotificationParser().parse(TIME, "12,50 €"));
     }
 
     @Test public void parsesIsyBankDateAndMaskedTransferWithoutOwnerNames() {
@@ -113,6 +120,7 @@ public final class NotificationParserTest {
         assertProvider(registry, ParserRegistry.GOOGLE_WALLET_PACKAGE, "google_wallet", "Google Wallet");
         assertProvider(registry, ParserRegistry.REVOLUT_PACKAGE, "revolut", "Revolut");
         assertProvider(registry, ParserRegistry.BBVA_PACKAGE, "bbva", "BBVA");
+        assertProvider(registry, ParserRegistry.HYPE_PACKAGE, "hype", "HYPE");
         assertNull(registry.providerFor("com.example.other"));
     }
 
