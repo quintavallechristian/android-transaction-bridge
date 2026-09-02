@@ -3,9 +3,7 @@ package io.github.transactionbridge;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 
@@ -84,10 +82,9 @@ public final class AttentionLog {
         if (value == null || value.isEmpty()) return result;
         for (String line : value.split("\\n", -1)) {
             if (line.isEmpty()) continue;
-            String[] fields = line.split("\\|", 4);
-            if (fields.length != 4) throw new IllegalStateException("attention log is corrupt");
+            String[] fields = RecordCodec.fields(line, 4, "attention log is corrupt");
             try {
-                result.add(new Entry(decode(fields[0]), decode(fields[1]), decode(fields[2]), Long.parseLong(fields[3])));
+                result.add(new Entry(RecordCodec.decode(fields[0]), RecordCodec.decode(fields[1]), RecordCodec.decode(fields[2]), Long.parseLong(fields[3])));
             } catch (IllegalArgumentException error) {
                 throw new IllegalStateException("attention log is corrupt", error);
             }
@@ -98,12 +95,9 @@ public final class AttentionLog {
     private void write(List<Entry> entries) {
         StringBuilder value = new StringBuilder();
         for (Entry entry : entries) {
-            value.append(encode(entry.id)).append('|').append(encode(entry.payload)).append('|')
-                    .append(encode(entry.reason)).append('|').append(entry.recordedAt).append('\n');
+            value.append(RecordCodec.encode(entry.id)).append('|').append(RecordCodec.encode(entry.payload)).append('|')
+                    .append(RecordCodec.encode(entry.reason)).append('|').append(entry.recordedAt).append('\n');
         }
         store.write(value.toString());
     }
-
-    private static String encode(String value) { return Base64.getUrlEncoder().withoutPadding().encodeToString(value.getBytes(StandardCharsets.UTF_8)); }
-    private static String decode(String value) { return new String(Base64.getUrlDecoder().decode(value), StandardCharsets.UTF_8); }
 }

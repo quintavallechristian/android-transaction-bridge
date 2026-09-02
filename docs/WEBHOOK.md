@@ -39,7 +39,7 @@ A `minimal` payload looks like this:
 | Field | Meaning |
 | --- | --- |
 | `version` | Integer version of the webhook format. Reject or quarantine unsupported versions. |
-| `id` | Deterministic transaction identifier. Store it with a unique constraint to make processing idempotent. |
+| `id` | Identifier stable across delivery retries. Store it with a unique constraint to make processing idempotent. A separate Android notification post may have a new ID. |
 | `source` | Parser and account source, such as `ing-notification` or `google-wallet-personal-ing-notification`. |
 | `occurredAt` | Transaction time as an ISO 8601 UTC timestamp. |
 | `amount` | Positive decimal amount encoded as a string to preserve decimal precision. |
