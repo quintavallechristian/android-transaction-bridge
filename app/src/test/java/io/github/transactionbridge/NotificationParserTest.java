@@ -39,6 +39,16 @@ public final class NotificationParserTest {
         assertEquals("28.80", revolut.amount.toPlainString());
         assertNull(new RevolutNotificationParser().parse(TIME,
                 "Hai ricevuto 28,80 € da Another Person"));
+
+        Transaction bbva = new BbvaNotificationParser().parse(TIME,
+                "Pagamento accettato 👍 💳 Il pagamento di 12,50 EUR in data EXAMPLE SHOP "
+                        + "effettuato con la tua carta 1234 è stato accettato.");
+        assertEquals("12.50", bbva.amount.toPlainString());
+        assertEquals("EUR", bbva.currency);
+        assertEquals("EXAMPLE SHOP", bbva.merchant);
+        assertEquals("bbva-notification", bbva.source);
+        assertNull(new BbvaNotificationParser().parse(TIME,
+                "Il pagamento di 12,50 EUR in data EXAMPLE SHOP effettuato con la tua carta 1234 è stato rifiutato."));
     }
 
     @Test public void parsesIsyBankDateAndMaskedTransferWithoutOwnerNames() {
@@ -102,6 +112,7 @@ public final class NotificationParserTest {
         assertProvider(registry, ParserRegistry.ISYBANK_PACKAGE, "isybank", "IsyBank");
         assertProvider(registry, ParserRegistry.GOOGLE_WALLET_PACKAGE, "google_wallet", "Google Wallet");
         assertProvider(registry, ParserRegistry.REVOLUT_PACKAGE, "revolut", "Revolut");
+        assertProvider(registry, ParserRegistry.BBVA_PACKAGE, "bbva", "BBVA");
         assertNull(registry.providerFor("com.example.other"));
     }
 
