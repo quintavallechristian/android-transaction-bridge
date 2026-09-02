@@ -40,6 +40,10 @@ For transfers, the merchant is recorded as `Bonifico` followed by the IBAN. The 
 
 An optional suffix such as `Saldo di ...` is accepted. Transfers are not currently supported by Transaction Bridge.
 
+### BBVA
+
+- Accepted card payments: `Il pagamento di 12,50 EUR in data Merchant Name effettuato con la tua carta 1234 è stato accettato.`
+
 ### Google Wallet
 
 - Card payments: `Merchant Name 12,50 € con ... •••• 1234`
