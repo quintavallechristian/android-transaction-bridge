@@ -48,6 +48,10 @@ An optional suffix such as `Saldo di ...` is accepted. Transfers are not current
 
 - Card payments: `Merchant Name, City 12,50 €`
 
+### American Express
+
+- Card payments: `Merchant Name 12,50 €`
+
 ### Google Wallet
 
 - Card payments: `Merchant Name 12,50 € con ... •••• 1234`

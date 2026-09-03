@@ -14,6 +14,7 @@ public final class ParserRegistry {
     public static final String REVOLUT_PACKAGE = "com.revolut.revolut";
     public static final String BBVA_PACKAGE = "com.bbva.italy";
     public static final String HYPE_PACKAGE = "it.hype.app";
+    public static final String AMEX_PACKAGE = "com.americanexpress.android.acctsvcs.it";
 
     public static final class Provider {
         public final String packageName;
@@ -42,6 +43,7 @@ public final class ParserRegistry {
         registry.register(REVOLUT_PACKAGE, "revolut", "Revolut", new RevolutNotificationParser());
         registry.register(BBVA_PACKAGE, "bbva", "BBVA", new BbvaNotificationParser());
         registry.register(HYPE_PACKAGE, "hype", "HYPE", new HypeNotificationParser());
+        registry.register(AMEX_PACKAGE, "amex", "American Express", new AmexNotificationParser());
         return registry;
     }
 
