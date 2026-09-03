@@ -47,5 +47,6 @@ android {
 }
 
 dependencies {
+    implementation("io.github.quintavallechristian:transaction-parsers:0.1.1")
     testImplementation("junit:junit:4.13.2")
 }
