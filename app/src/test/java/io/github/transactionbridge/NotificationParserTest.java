@@ -56,6 +56,13 @@ public final class NotificationParserTest {
         assertEquals("EXAMPLE SHOP, EXAMPLE CITY", hype.merchant);
         assertEquals("hype-notification", hype.source);
         assertNull(new HypeNotificationParser().parse(TIME, "12,50 €"));
+
+        Transaction amex = new AmexNotificationParser().parse(TIME, "EXAMPLE HOTEL 12,50 €");
+        assertEquals("12.50", amex.amount.toPlainString());
+        assertEquals("EUR", amex.currency);
+        assertEquals("EXAMPLE HOTEL", amex.merchant);
+        assertEquals("amex-notification", amex.source);
+        assertNull(new AmexNotificationParser().parse(TIME, "12,50 €"));
     }
 
     @Test public void parsesIsyBankDateAndMaskedTransferWithoutOwnerNames() {
@@ -121,6 +128,7 @@ public final class NotificationParserTest {
         assertProvider(registry, ParserRegistry.REVOLUT_PACKAGE, "revolut", "Revolut");
         assertProvider(registry, ParserRegistry.BBVA_PACKAGE, "bbva", "BBVA");
         assertProvider(registry, ParserRegistry.HYPE_PACKAGE, "hype", "HYPE");
+        assertProvider(registry, ParserRegistry.AMEX_PACKAGE, "amex", "American Express");
         assertNull(registry.providerFor("com.example.other"));
     }
 
