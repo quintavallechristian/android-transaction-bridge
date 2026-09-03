@@ -78,10 +78,10 @@ The project requires Android SDK 36 and Java 17. The package name is `io.github.
 
 ## Parser library
 
-The Android-independent parsers are published to GitHub Packages from tags named `parsers-vX.Y.Z`:
+The Android-independent parsers live in [transaction-parsers](https://github.com/quintavallechristian/transaction-parsers):
 
 ```kotlin
-implementation("io.github.transactionbridge:transaction-parsers:0.1.0")
+implementation("io.github.quintavallechristian:transaction-parsers:0.1.0")
 ```
 
 GitHub Packages requires a GitHub username and a token with `read:packages` in the consuming project's Maven repository credentials.

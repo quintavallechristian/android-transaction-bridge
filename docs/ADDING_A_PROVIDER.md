@@ -28,7 +28,7 @@ Anonymize every fixture before committing it. Replace names, merchants, IBANs, a
 Create:
 
 ```text
-transaction-parsers/src/main/java/io/github/transactionbridge/ExampleBankNotificationParser.java
+src/main/java/io/github/transactionbridge/ExampleBankNotificationParser.java
 ```
 
 Implement the pure `NotificationParser` interface:
@@ -98,7 +98,7 @@ That single registration also creates the enabled-by-default setting and the che
 Edit:
 
 ```text
-transaction-parsers/src/test/java/io/github/transactionbridge/NotificationParserTest.java
+src/test/java/io/github/transactionbridge/NotificationParserTest.java
 ```
 
 Add at least:
