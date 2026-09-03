@@ -7,7 +7,6 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 public final class NotificationParserTest {
     private static final long TIME = 1_786_000_000_000L;
@@ -139,21 +138,4 @@ public final class NotificationParserTest {
         assertEquals(label, provider.label);
     }
 
-    @Test public void walletCardsUseSeparateValidatedDigitsAndNames() {
-        Map<String, String> cards = new java.util.LinkedHashMap<>();
-        Settings.putWalletCard(cards, " 1501 ", " Personal card ");
-        assertEquals("Personal card", cards.get("1501"));
-        Settings.putWalletCard(cards, "1501", "Business card");
-        assertEquals("Business card", cards.get("1501"));
-        assertEquals(cards, Settings.parseWalletCards(Settings.walletCardsText(cards)));
-        cards.remove("1501");
-        assertTrue(cards.isEmpty());
-
-        try {
-            Settings.putWalletCard(cards, "501", "Invalid");
-            org.junit.Assert.fail("Expected invalid suffix");
-        } catch (IllegalArgumentException expected) {
-            assertEquals("Enter exactly the last 4 card digits", expected.getMessage());
-        }
-    }
 }

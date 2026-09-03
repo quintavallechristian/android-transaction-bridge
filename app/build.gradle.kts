@@ -47,5 +47,6 @@ android {
 }
 
 dependencies {
+    implementation(project(":transaction-parsers"))
     testImplementation("junit:junit:4.13.2")
 }

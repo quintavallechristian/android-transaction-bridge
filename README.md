@@ -76,6 +76,16 @@ Only the last four digits and the name chosen by the user are stored. Full card 
 
 The project requires Android SDK 36 and Java 17. The package name is `io.github.transactionbridge`.
 
+## Parser library
+
+The Android-independent parsers are published to GitHub Packages from tags named `parsers-vX.Y.Z`:
+
+```kotlin
+implementation("io.github.transactionbridge:transaction-parsers:0.1.0")
+```
+
+GitHub Packages requires a GitHub username and a token with `read:packages` in the consuming project's Maven repository credentials.
+
 ## Webhook payload
 
 The default payload contains `version`, `id`, `source`, `occurredAt`, `amount`, `currency`, and `merchant`. The ID is stable across delivery retries so webhook consumers can safely deduplicate them. A notification reposted by Android may have a new ID and should be treated as a separate observation. `rawText` is added only in `full` mode. See [Receiving webhook data](docs/WEBHOOK.md) for the request contract, response handling, retries, and a receiver outline.

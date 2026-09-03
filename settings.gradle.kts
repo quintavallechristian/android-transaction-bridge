@@ -18,3 +18,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "android-transaction-bridge"
 include(":app")
+include(":transaction-parsers")

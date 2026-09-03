@@ -20,7 +20,7 @@ public final class ParserRegistry {
         public final String packageName;
         public final String settingKey;
         public final String label;
-        final NotificationParser parser;
+        public final NotificationParser parser;
 
         Provider(String packageName, String settingKey, String label, NotificationParser parser) {
             this.packageName = packageName;
