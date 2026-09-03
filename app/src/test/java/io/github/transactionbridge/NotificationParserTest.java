@@ -40,6 +40,12 @@ public final class NotificationParserTest {
         assertNull(new RevolutNotificationParser().parse(TIME,
                 "Hai ricevuto 28,80 € da Another Person"));
 
+        Transaction transfer = new RevolutNotificationParser().parse(TIME,
+                "Denaro inviato ✅ Hai inviato 125 € a EXAMPLE CHARITY. Arriverà in pochi secondi");
+        assertEquals("125", transfer.amount.toPlainString());
+        assertEquals("EXAMPLE CHARITY", transfer.merchant);
+        assertEquals("revolut-notification", transfer.source);
+
         Transaction bbva = new BbvaNotificationParser().parse(TIME,
                 "Pagamento accettato 👍 💳 Il pagamento di 12,50 EUR in data EXAMPLE SHOP "
                         + "effettuato con la tua carta 1234 è stato accettato.");

@@ -37,8 +37,9 @@ For transfers, the merchant is recorded as `Bonifico` followed by the IBAN. The 
 ### Revolut
 
 - Card payments: `Merchant Name Hai speso 12,50 €`
+- Outgoing transfers: `Hai inviato 125 € a Recipient Name. Arriverà in pochi secondi`
 
-An optional suffix such as `Saldo di ...` is accepted. Transfers are not currently supported by Transaction Bridge.
+An optional card-payment suffix such as `Saldo di ...` is accepted.
 
 ### BBVA
 
