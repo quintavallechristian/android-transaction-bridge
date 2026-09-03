@@ -2,6 +2,8 @@
 
 This guide explains how to add a provider for a payment notification format supported by an Android app. Providers should be added for every relevant notification type, including notifications that may also be reported by another source.
 
+Parser and registry changes belong in the standalone [transaction-parsers](https://github.com/quintavallechristian/transaction-parsers) repository. After publishing a new library version, update the dependency used by this app.
+
 ## AI way
 
 You can ask the `payment-provider-from-screenshot` skill to add the provider from an attached payment-notification screenshot. The skill extracts the visible format, creates anonymized fixtures, adds the parser and registry entry, writes focused tests, and updates the README.
