@@ -15,11 +15,11 @@ Pending deliveries are stored locally in FIFO order. Supported HTTP `2xx` respon
 
 ## Supported notification sources
 
-Transaction Bridge supports Crypto.com, IsyBank, ING, Revolut, BBVA, HYPE, American Express, and Google Wallet. Exact formats and parser contribution instructions live in [transaction-parsers](https://github.com/quintavallechristian/transaction-parsers).
+Transaction Bridge supports the notification sources provided by [transaction-parsers](https://github.com/quintavallechristian/transaction-parsers), where the current list, exact formats, and parser contribution instructions live.
 
-## Google Wallet
+## Google Wallet configuration
 
-Google Wallet notifications identify the payment card by its last four digits. Transaction Bridge compares those digits with the cards configured on the device and uses the corresponding name in the webhook `source`, for example `google-wallet-personal-ing-notification`.
+Google Wallet parsing is provided by `transaction-parsers`. Transaction Bridge supplies it with the cards configured on the device so the last four digits can be mapped to the corresponding name in the webhook `source`, for example `google-wallet-personal-ing-notification`.
 
 Only the last four digits and the name chosen by the user are stored. Full card numbers are never requested. A Wallet notification from an unknown card is ignored. Card mappings remain on the device, and the default `minimal` payload does not include the original notification text.
 
@@ -33,10 +33,10 @@ The project requires Android SDK 36 and Java 17. The package name is `io.github.
 
 ## Parser library
 
-The Android-independent parsers live in [transaction-parsers](https://github.com/quintavallechristian/transaction-parsers):
+Transaction Bridge is an example app showing how to integrate and use the Android-independent [transaction-parsers](https://github.com/quintavallechristian/transaction-parsers) library:
 
 ```kotlin
-implementation("io.github.quintavallechristian:transaction-parsers:0.1.1")
+implementation("io.github.quintavallechristian:transaction-parsers:0.1.2")
 ```
 
 GitHub Packages requires a GitHub username and a token with `read:packages` in the consuming project's Maven repository credentials.

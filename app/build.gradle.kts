@@ -17,8 +17,8 @@ android {
         applicationId = "io.github.transactionbridge"
         minSdk = 26
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.1.1"
+        versionCode = 3
+        versionName = "0.1.2"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -47,6 +47,6 @@ android {
 }
 
 dependencies {
-    implementation("io.github.quintavallechristian:transaction-parsers:0.1.1")
+    implementation("io.github.quintavallechristian:transaction-parsers:0.1.2")
     testImplementation("junit:junit:4.13.2")
 }

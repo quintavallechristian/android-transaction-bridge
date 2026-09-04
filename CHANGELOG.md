@@ -4,6 +4,8 @@ All notable changes to this project will be documented here.
 
 ## Unreleased
 
+- Update transaction parsers to 0.1.2, adding Advanzia notification support.
+
 ## 0.1.1 - 2026-09-01
 
 - Prevent recognized notifications from being lost when durable queue or attention-log writes fail.
