@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented here.
 
-## Unreleased
+## 0.1.2 - 2026-09-05
 
 - Update transaction parsers to 0.1.2, adding Advanzia notification support.
 
