@@ -2,6 +2,10 @@
 
 All notable changes to this project will be documented here.
 
+## 0.1.4 - 2026-09-16
+
+- Update transaction parsers to 0.1.5, adding BCC and UniCredit support and expanded ING parsing.
+
 ## 0.1.2 - 2026-09-05
 
 - Update transaction parsers to 0.1.2, adding Advanzia notification support.
