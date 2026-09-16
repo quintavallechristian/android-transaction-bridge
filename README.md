@@ -36,7 +36,7 @@ The project requires Android SDK 36 and Java 17. The package name is `io.github.
 Transaction Bridge is an example app showing how to integrate and use the Android-independent [transaction-parsers](https://github.com/quintavallechristian/transaction-parsers) library:
 
 ```kotlin
-implementation("io.github.quintavallechristian:transaction-parsers:0.1.2")
+implementation("io.github.quintavallechristian:transaction-parsers:0.1.5")
 ```
 
 GitHub Packages requires a GitHub username and a token with `read:packages` in the consuming project's Maven repository credentials.
